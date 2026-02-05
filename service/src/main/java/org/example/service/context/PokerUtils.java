@@ -9,13 +9,16 @@ import java.util.*;
 public class PokerUtils {
 
     public static void createPoker(List<Poker> pokerList) {
-        pokerList.clear();
         for (int i = 2; i <= 14; i++) {
             for (int j = 0; j < 4; j++) {
-                Poker poker = new Poker();
-                poker.setNo(i);
-                poker.setSuits(j);
-                pokerList.add(poker);
+                int finalJ = j;
+                int finalI = i;
+                pokerList.add(new Poker() {
+                    {
+                        this.setNo(finalI);
+                        this.setSuits(finalJ);
+                    }
+                });
             }
         }
     }
@@ -83,6 +86,7 @@ public class PokerUtils {
 
         int score = 0;
         Collections.sort(pl, (o1, o2) -> o2.size() - o1.size());
+
         /**
          *
          * 单牌+0 对子+100 两对+200 三张+300 顺子+400 同花+500 葫芦+1000 四条+2000 同花顺+3000

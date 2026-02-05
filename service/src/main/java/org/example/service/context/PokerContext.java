@@ -12,7 +12,6 @@ import org.example.common.utils.SystemMessageUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class PokerContext {
 
@@ -24,9 +23,6 @@ public class PokerContext {
     private List<PokerChannel> pokerChannelList = null;
 
     private Map<User, Player> playerMap = new HashMap<>();
-
-    //轮数 每次发牌+1 每局结束时清零
-    private int roundIndex = 0;
 
     //牌局,每局结束时+1 不清零
     private int partyIndex = 0;
@@ -52,7 +48,6 @@ public class PokerContext {
     }
 
     private void initialize() {
-        roundIndex = 0;
         playIndex = 0;
 
         pokerChannelList = ApplicationContextGatherUtils.nettyApplicationContext().getPokerChannel();
@@ -274,7 +269,6 @@ public class PokerContext {
     }
 
     private void sendCommonPoker() {
-        roundIndex++;
         fillLastPlayIndex = playIndex;
         int limit = 1;
         if (gameRound.getCommonPokerList().isEmpty()) {
