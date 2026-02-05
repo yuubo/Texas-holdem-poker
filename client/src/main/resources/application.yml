@@ -1,0 +1,10 @@
+netty:
+  client:
+    udp:
+      port: 8081
+      host: 255.255.255.255
+  eventLoop:
+      threadCount: 1
+      type: NIO
+  service:
+    port: 8080

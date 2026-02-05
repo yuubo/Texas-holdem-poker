@@ -1,0 +1,10 @@
+netty:
+  service:
+    tcp:
+      port: 8081
+    udp:
+      port: 8080
+  boosGroup:
+    loopCount: 2
+  eventLoop:
+    type: NIO

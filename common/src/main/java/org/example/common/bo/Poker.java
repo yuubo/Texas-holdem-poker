@@ -1,0 +1,24 @@
+package org.example.common.bo;
+
+public class Poker extends BaseBo {
+
+    private int suits;
+
+    private int no;
+
+    public int getSuits() {
+        return suits;
+    }
+
+    public void setSuits(int suits) {
+        this.suits = suits;
+    }
+
+    public int getNo() {
+        return no;
+    }
+
+    public void setNo(int no) {
+        this.no = no;
+    }
+}
