@@ -1,26 +1,32 @@
 package org.example.client.init;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.ChannelFuture;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.socket.DatagramPacket;
+import io.netty.channel.ChannelInitializer;
 import org.example.client.handle.udp.CheckServiceHandle;
 import org.example.common.handle.udp.DatagramPacketToStrHandle;
 import org.example.common.handle.udp.StrToDatagramPacketHandle;
-import org.example.common.warp.UdpMessage;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
+@Component
+public class InitUDPPipeline extends ChannelInitializer {
 
-public class InitUDPPipeline extends ChannelHandlerAdapter {
+    @Autowired
+    private DatagramPacketToStrHandle datagramPacketToStrHandle;
+
+    @Autowired
+    private StrToDatagramPacketHandle strToDatagramPacketHandle;
+
+    @Autowired
+    private CheckServiceHandle checkServiceHandle;
 
     @Override
-    public void handlerAdded(ChannelHandlerContext ch) throws Exception {
-        ch.pipeline().addLast(new DatagramPacketToStrHandle());
-        ch.pipeline().addLast(new StrToDatagramPacketHandle());
-        ch.pipeline().addLast(new CheckServiceHandle());
+    protected void initChannel(Channel ch) throws Exception {
+        ch.pipeline().addLast(datagramPacketToStrHandle);
+        ch.pipeline().addLast(strToDatagramPacketHandle);
+        ch.pipeline().addLast(checkServiceHandle);
     }
 
 }

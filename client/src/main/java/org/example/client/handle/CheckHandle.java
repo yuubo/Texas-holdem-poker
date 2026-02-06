@@ -6,7 +6,9 @@ import org.example.client.context.ApplicationContextGatherUtils;
 import org.example.common.bo.BaseBo;
 import org.example.common.bo.Message;
 import org.example.common.utils.SystemMessageUtils;
+import org.springframework.stereotype.Component;
 
+@Component
 public class CheckHandle extends SimpleChannelInboundHandler<BaseBo> {
 
     @Override

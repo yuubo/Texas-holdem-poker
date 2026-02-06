@@ -73,6 +73,10 @@ public class PokerContext {
             Player player = null;
             if (playerMap.containsKey(pokerChannel.getUser())) {
                 player = playerMap.get(pokerChannel.getUser());
+                if (player.getScoreTotal() < 10) {
+                    player.setStatus(PlayerStatusEnum.ONLOOKER.getStatus());
+                }
+
                 player.setGrade(0);
                 player.setActivity(PlayerActivityEnum.NORMAL.getNumber());
                 player.setStatus(PlayerStatusEnum.NORMAL.getStatus());
@@ -125,72 +129,94 @@ public class PokerContext {
         Player player = playerMap.get(channel.getUser());
         player.setActivity(PlayerActivityEnum.NORMAL.getNumber());
         if (operate.getOperate() == OperateEnum.PASS.getOperate()) {
-            //过牌
-            if (player.getScore() == gameRound.getScore()) {
-                player.setStatus(PlayerStatusEnum.PASS.getStatus());
-                playIndex ++;
-                next();
-            } else {
-                channel.getChannel().writeAndFlush(SystemMessageUtils.messageSource("service.gameround.hint.a"));
-            }
+            pass(player, channel);
         } else if (operate.getOperate() == OperateEnum.CALL.getOperate()) {
             //跟注
-            int riseScore = gameRound.getScore() - player.getScore();
-            if (player.getScoreTotal() == 0 || player.getScoreTotal() < riseScore) {
-                channel.getChannel().writeAndFlush(SystemMessageUtils.messageSource("service.gameround.hint.b"));
-            } else {
-                player.setStatus(PlayerStatusEnum.CALL.getStatus());
-                player.setScore(gameRound.getScore());
-                player.setScoreTotal(player.getScoreTotal() - riseScore);
-                gameRound.setScoreTotal(gameRound.getScoreTotal() + riseScore);
-                playIndex ++;
-                next();
-            }
+            call(player, channel);
         } else if (operate.getOperate() == OperateEnum.ALLIN.getOperate()) {
             //all-in
-            if (player.getScoreTotal() == 0) {
-                channel.getChannel().writeAndFlush(SystemMessageUtils.messageSource("service.gameround.hint.c"));
-            } else {
-                player.setStatus(PlayerStatusEnum.ALL_IN.getStatus());
-                if (player.getScoreTotal() > gameRound.getScore()) {
-                    gameRound.setScoreTotal(gameRound.getScoreTotal() + player.getScoreTotal());
-                    gameRound.setScore(player.getScoreTotal());
-                    player.setScore(player.getScore() + player.getScoreTotal());
-                    player.setScoreTotal(0);
-                    fillLastPlayIndex = playIndex;
-                } else {
-                    gameRound.setScoreTotal(gameRound.getScoreTotal() + player.getScoreTotal());
-                    player.setScore(player.getScore() + player.getScoreTotal());
-                    player.setScoreTotal(0);
-                }
-                player.setStatus(PlayerStatusEnum.ALL_IN.getStatus());
-                playIndex ++;
-                next();
-            }
+            allIn(player, channel);
         } else if (operate.getOperate() == OperateEnum.FILL.getOperate()) {
             //加注
-            if (player.getScoreTotal() == 0 && player.getScoreTotal() > (gameRound.getScore() - player.getScore())) {
-                channel.getChannel().writeAndFlush(SystemMessageUtils.messageSource("service.gameround.hint.d"));
-            } else if (player.getScoreTotal() < operate.getSore()){
-                channel.getChannel().writeAndFlush(SystemMessageUtils.messageSource("service.gameround.hint.e"));
-            } else {
-                clearFillStatus(player);
-                player.setStatus(PlayerStatusEnum.FILL.getStatus());
-                player.setScore(operate.getSore() + player.getScore());
-                player.setScoreTotal(player.getScoreTotal() - operate.getSore());
-                gameRound.setScoreTotal(gameRound.getScoreTotal() + operate.getSore());
-                gameRound.setScore(player.getScore());
-                fillLastPlayIndex = playIndex;
-                playIndex ++;
-                next();
-            }
+            fill(player, channel, operate);
         } else if (operate.getOperate() == OperateEnum.FOLD.getOperate()) {
             //弃牌
-            player.setStatus(PlayerStatusEnum.FOLD.getStatus());
-            gameRound.setFoldPlayerTCount(gameRound.getFoldPlayerTCount() + 1);
+            fold(player, channel);
+        }
+    }
+
+    public void call(Player player, PokerChannel channel) {
+        //跟注
+        int riseScore = gameRound.getScore() - player.getScore();
+        if (player.getScoreTotal() == 0 || player.getScoreTotal() < riseScore) {
+            channel.getChannel().writeAndFlush(SystemMessageUtils.messageSource("service.gameround.hint.b"));
+        } else {
+            player.setStatus(PlayerStatusEnum.CALL.getStatus());
+            player.setScore(gameRound.getScore());
+            player.setScoreTotal(player.getScoreTotal() - riseScore);
+            gameRound.setScoreTotal(gameRound.getScoreTotal() + riseScore);
             playIndex ++;
             next();
         }
+    }
+
+    public void pass(Player player, PokerChannel channel) {
+        if (player.getScore() == gameRound.getScore()) {
+            player.setStatus(PlayerStatusEnum.PASS.getStatus());
+            playIndex ++;
+            next();
+        } else {
+            channel.getChannel().writeAndFlush(SystemMessageUtils.messageSource("service.gameround.hint.a"));
+        }
+    }
+
+    public void allIn(Player player, PokerChannel channel) {
+        if (player.getScoreTotal() == 0) {
+            channel.getChannel().writeAndFlush(SystemMessageUtils.messageSource("service.gameround.hint.c"));
+        } else {
+            player.setStatus(PlayerStatusEnum.ALL_IN.getStatus());
+            if (player.getScoreTotal() > gameRound.getScore()) {
+                gameRound.setScoreTotal(gameRound.getScoreTotal() + player.getScoreTotal());
+                gameRound.setScore(player.getScoreTotal());
+                player.setScore(player.getScore() + player.getScoreTotal());
+                player.setScoreTotal(0);
+                fillLastPlayIndex = playIndex;
+            } else {
+                gameRound.setScoreTotal(gameRound.getScoreTotal() + player.getScoreTotal());
+                player.setScore(player.getScore() + player.getScoreTotal());
+                player.setScoreTotal(0);
+            }
+            player.setStatus(PlayerStatusEnum.ALL_IN.getStatus());
+            playIndex ++;
+            next();
+        }
+    }
+
+    public void fill(Player player, PokerChannel channel, Operate operate) {
+        //加注
+        if (player.getScoreTotal() == 0 && player.getScoreTotal() > (gameRound.getScore() - player.getScore())) {
+            channel.getChannel().writeAndFlush(SystemMessageUtils.messageSource("service.gameround.hint.d"));
+        } else if (player.getScoreTotal() < operate.getScore()){
+            channel.getChannel().writeAndFlush(SystemMessageUtils.messageSource("service.gameround.hint.e"));
+        } else {
+            clearFillStatus(player);
+            player.setStatus(PlayerStatusEnum.FILL.getStatus());
+            player.setScore(operate.getScore() + player.getScore());
+            player.setScoreTotal(player.getScoreTotal() - operate.getScore());
+            gameRound.setScoreTotal(gameRound.getScoreTotal() + operate.getScore());
+            gameRound.setScore(player.getScore());
+            fillLastPlayIndex = playIndex;
+            playIndex ++;
+            next();
+        }
+    }
+
+    public void fold(Player player, PokerChannel channel) {
+        //弃牌
+        player.setStatus(PlayerStatusEnum.FOLD.getStatus());
+        gameRound.setFoldPlayerTCount(gameRound.getFoldPlayerTCount() + 1);
+        playIndex ++;
+        next();
     }
 
     /**
@@ -218,7 +244,7 @@ public class PokerContext {
         PokerChannel pokerChannel = getPokerChannelByPlayerIndex();
         User user = pokerChannel.getUser();
         Player pl = playerMap.get(user);
-        if (pl.getStatus() == PlayerStatusEnum.FOLD.getStatus() || pl.getScoreTotal() == 0) {
+        if (pl.getStatus() == PlayerStatusEnum.FOLD.getStatus() || pl.getStatus() == PlayerStatusEnum.ONLOOKER.getStatus()) {
             playIndex ++;
             next();
             return;
@@ -239,6 +265,7 @@ public class PokerContext {
 
         Operate operate = new Operate();
         if (pl.getScoreTotal() == 0) {
+            //没有筹码时直接过牌
             operate.setOperate(OperateEnum.PASS.getOperate());
             operateHandle(operate, pokerChannel);
         } else {
@@ -338,46 +365,44 @@ public class PokerContext {
      * @param gradeList
      */
     private void ruling(List<Map.Entry<Integer, List<Player>>> gradeList) {
+        Map<BigDecimal, Map<Player, BigDecimal>> proportionMap = new HashMap<>();
 
         for (int i = 0; i < gradeList.size(); i++) {
 
             Map.Entry<Integer, List<Player>> gradePlayerEntry = gradeList.get(i);
 
+
             for (int j = 0; j < gradePlayerEntry.getValue().size(); j++) {
 
                 Player winPlayer = gradePlayerEntry.getValue().get(j);
 
-                BigDecimal score = reasonableScore(gradePlayerEntry.getValue(), gradePlayerEntry.getKey());
-                if (winPlayer.getCalculateScore().compareTo(score) > 0) {
-                    winPlayer.getExcessiveScore().add(winPlayer.getCalculateScore().subtract(score));
-                    winPlayer.setCalculateScore(score);
-                }
-
-                if (gameRound.getCalculateScore().compareTo(score) > 0) {
-                    gameRound.getCalculateScoreTotal().subtract(gameRound.getCalculateScore().subtract(score));
-                    gameRound.setCalculateScore(score);
-                }
-
-                //获取赢家获取筹码比例
-                Map<Player, BigDecimal> proportionMap = proportion(gradePlayerEntry.getValue(), score);
-                BigDecimal proportion = proportionMap.get(winPlayer);
+                BigDecimal maxScore = maxWinScore(gradePlayerEntry.getValue(), gradePlayerEntry.getKey());
 
                 for (Player pl : playerMap.values()) {
-                    //Player pl = entry.getKey();
                     if (pl == winPlayer ){
-                        gameRound.setScoreTotal(gameRound.getScoreTotal() - winPlayer.getScore());
-                        winPlayer.setPartyWinScore(winPlayer.getPartyWinScore() + winPlayer.getScore());
+                        //赢家自己的下注筹码直接返还
+                        gameRound.setCalculateScoreTotal(gameRound.getCalculateScoreTotal().subtract(winPlayer.getCalculateScore()));
+                        winPlayer.getCalculatePartyWinScore().add(winPlayer.getCalculateScore());
                     } else {
-                        //筹码扣完或牌
-                        if (pl.getScore() == 0 || pl.getGrade() >= winPlayer.getGrade()) {
+                        //筹码扣完或pl分数比当前赢家高时跳过处理
+                        if (pl.getCalculateScore().compareTo(BigDecimal.ONE) < 1 || pl.getGrade() >= winPlayer.getGrade()) {
                             continue;
                         }
-                        if (pl.getCalculateScore().compareTo(score) > 0) {
-                            pl.getExcessiveScore().add(pl.getCalculateScore().subtract(score));
-                            pl.setCalculateScore(score);
+
+                        BigDecimal score = pl.getCalculateScore();
+                        if (pl.getCalculateScore().compareTo(maxScore) > 0) {
+                            /*输家的下注高于赢家时，输家的筹码按照赢家的筹码一样处理，玩家最多只能赢自己下注的100%筹码
+                             *比如A和B玩家都ALLIN，A有60筹码，B有100筹码，A只能赢60筹码，相当于B只下了60筹码
+                             */
+                            score = maxScore;
                         }
+                        if (!proportionMap.containsKey(pl.getCalculateScore()) || !proportionMap.get(pl.getCalculateScore()).containsKey(pl)) {
+                            proportionCalculate(gradePlayerEntry.getValue(), pl.getCalculateScore(), proportionMap);
+                        }
+
+                        BigDecimal proportion = proportionMap.get(pl.getCalculateScore()).get(pl);
                         //赢家取走的筹码
-                        BigDecimal takenAway = pl.getCalculateScore().multiply(proportion);
+                        BigDecimal takenAway = score.multiply(proportion);
 
                         winPlayer.getCalculateTotalScore().add(takenAway);
                         winPlayer.getCalculatePartyWinScore().add(takenAway);
@@ -400,35 +425,16 @@ public class PokerContext {
      * @param grade
      * @return
      */
-    private BigDecimal reasonableScore(List<Player> winPlayerList, int grade) {
+    private BigDecimal maxWinScore(List<Player> winPlayerList, int grade) {
         BigDecimal maxWinScore = winPlayerList.stream().map(Player::getCalculateScore).max(BigDecimal::compareTo).get();
-        BigDecimal maxLoserScore = maxLoserScore(grade);
+        /*BigDecimal maxLoserScore = maxLoserScore(grade);
         BigDecimal score = maxWinScore;
         if (maxWinScore.compareTo(maxLoserScore) > 0) {
             score = maxLoserScore;
         }
         return score;
-    }
-
-    /**
-     * 输家最大注
-     * @return
-     */
-    private BigDecimal maxLoserScore(int grade) {
-        ArrayList<Player> playerList = new ArrayList<>() {
-            {
-                addAll(playerMap.values());
-            }
-        };
-
-        playerList.sort((o1, o2)-> {
-            if (o1.getGrade() >= grade) {
-                return -1;
-            }
-            return o2.getCalculateScore().compareTo(o1.getCalculateScore());
-        });
-
-        return playerList.getFirst().getCalculateScore();
+        */
+        return maxWinScore;
     }
 
     private Map<Player, BigDecimal> proportion(List<Player> winPlayerList, BigDecimal maxScore) {
@@ -450,6 +456,36 @@ public class PokerContext {
         }
 
         return map;
+    }
+
+    private void proportionCalculate(List<Player> winPlayerList, BigDecimal loserPlayScore,
+                             Map<BigDecimal, Map<Player, BigDecimal>> proportionMap) {
+
+        BigDecimal total = BigDecimal.ZERO;
+        winPlayerList.stream().forEach(player -> {
+            if (player.getCalculateScore().compareTo(loserPlayScore) > 0) {
+                /*赢家的下注筹码比输家多时，实际下注筹码只能等于输家的下注筹码
+                 *比如A和B玩家都ALLIN，A有60筹码，B有100筹码，B赢也只能赢60筹码，相当于B也下注60
+                 */
+                total.add(loserPlayScore);
+            } else {
+                total.add(player.getCalculateScore());
+            }
+        });
+
+        Map<Player, BigDecimal> map = null;
+        for (Player player : winPlayerList) {
+            map = proportionMap.get(loserPlayScore);
+            if (map == null) {
+                map = new HashMap<>();
+                proportionMap.put(loserPlayScore, map);
+            }
+
+            BigDecimal proportion = player.getCalculateScore().divide(total, SCALE, ROUNDING_MODE);
+
+            map.put(player, proportion);
+        }
+
     }
 
     public void informHandle(PokerChannel excludeChannel, EventLoop eventLoop) {

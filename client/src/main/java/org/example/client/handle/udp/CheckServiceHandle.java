@@ -13,10 +13,12 @@ import org.example.common.bo.Operate;
 import org.example.common.enume.OperateEnum;
 import org.example.common.utils.SystemMessageUtils;
 import org.example.common.warp.UdpMessage;
+import org.springframework.stereotype.Component;
 
 import java.net.InetSocketAddress;
 import java.util.Scanner;
 
+@Component
 public class CheckServiceHandle extends SimpleChannelInboundHandler<UdpMessage> {
 
     @Override
@@ -45,8 +47,7 @@ public class CheckServiceHandle extends SimpleChannelInboundHandler<UdpMessage> 
     private void runTcpClient(InetSocketAddress socketAddress) throws InterruptedException {
         String hostAddress = socketAddress.getAddress().getHostAddress();
 
-
-        Thread thread = new Thread(() -> {
+        Thread.ofVirtual().start(() -> {
             ChannelFuture future = null;
             try {
                 /* Bootstrap bootstrap = new Bootstrap();
@@ -64,7 +65,7 @@ public class CheckServiceHandle extends SimpleChannelInboundHandler<UdpMessage> 
             ApplicationContextGatherUtils.clientApplicationContext().setChannel(future.channel());
             Channel channel = future.channel();
             System.out.println("TCP服务器连接成功");
-            new Thread(() -> {
+            Thread.ofVirtual().start(() -> {
                 Scanner scanner = new Scanner(System.in);
                 while (true) {
                     String nextLine = scanner.nextLine();
@@ -79,13 +80,10 @@ public class CheckServiceHandle extends SimpleChannelInboundHandler<UdpMessage> 
                     }
                     channel.writeAndFlush(SystemMessageUtils.stringMessage(ApplicationContextGatherUtils.clientApplicationContext().getUser(), nextLine));
                 }
-            }, "input").start();
+            });
 
             sendSecurityCode(channel);
         });
-        thread.start();
-
-
 
         /*TcpClient tcpClient = new TcpClient();
         Thread thread = new Thread(() -> {
@@ -98,11 +96,19 @@ public class CheckServiceHandle extends SimpleChannelInboundHandler<UdpMessage> 
 
     private void operateHandle(String command, Channel channel) {
         try {
-            int operate = Integer.parseInt(command.trim());
+            String[] split = command.split("-");
+
+            int operate = Integer.parseInt(split[0].trim());
+            Operate operateBo = new Operate();
+            operateBo.setOperate(operate);
             if (OperateEnum.getOperate(operate) != null) {
-                Operate operateBo = new Operate();
-                operateBo.setOperate(operate);
+                if (split.length == 2) {
+                    int score = Integer.parseInt(split[1].trim());
+                    operateBo.setScore(score);
+                }
                 channel.writeAndFlush(operateBo);
+            } else {
+                System.out.println("输入错误");
             }
         } catch (NumberFormatException e) {
             System.out.println("输入错误");

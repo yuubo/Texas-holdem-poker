@@ -104,6 +104,8 @@ public class ExportConsole {
                 print.print(PrintColorEnum.GREEN, "过牌");
             } else if (pl.getStatus() == PlayerStatusEnum.CALL.getStatus()) {
                 print.print(PrintColorEnum.GREEN, "跟注");
+            } else if (pl.getStatus() == PlayerStatusEnum.ONLOOKER.getStatus()) {
+                print.print("观众");
             }
         }
         print.print(" ");

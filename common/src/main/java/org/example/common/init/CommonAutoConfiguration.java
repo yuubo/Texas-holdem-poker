@@ -3,16 +3,27 @@ package org.example.common.init;
 import org.example.common.factory.EpollEventLoopGroupFactory;
 import org.example.common.factory.EventLoopGroupFactory;
 import org.example.common.factory.NioEventLoopGroupFactory;
+import org.example.common.handle.BoJsonOutboundHandle;
+import org.example.common.handle.JsonToBOInboundHandle;
+import org.example.common.handle.udp.DatagramPacketToStrHandle;
+import org.example.common.handle.udp.StrToDatagramPacketHandle;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
 import java.util.Locale;
 
 @Configuration
+@Import({
+        DatagramPacketToStrHandle.class,
+        StrToDatagramPacketHandle.class,
+        BoJsonOutboundHandle.class,
+        JsonToBOInboundHandle.class
+})
 public class CommonAutoConfiguration {
 
     @Bean

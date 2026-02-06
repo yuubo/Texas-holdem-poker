@@ -1,16 +1,24 @@
 package org.example.client.init;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
+import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.codec.string.StringEncoder;
+import org.example.common.constant.CommonConstant;
 import org.example.common.factory.EventLoopGroupFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class InitConfig {
@@ -42,4 +50,22 @@ public class InitConfig {
                 .handler(new InitPipeline());
         return bootstrap;
     }
+
+    @Bean
+    public DelimiterBasedFrameDecoder delimiterBasedFrameDecoder() {
+        int maxLength = 1024 * 1024;
+        ByteBuf byteBuf = Unpooled.copiedBuffer(CommonConstant.MESSAGE_END_MARK.getBytes(StandardCharsets.UTF_8));
+        return new DelimiterBasedFrameDecoder(maxLength, byteBuf);
+    }
+
+    @Bean
+    public StringDecoder stringDecoder() {
+        return new StringDecoder(StandardCharsets.UTF_8);
+    }
+
+    @Bean
+    public StringEncoder stringEncoder() {
+        return new StringEncoder(StandardCharsets.UTF_8);
+    }
+
 }

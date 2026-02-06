@@ -6,7 +6,7 @@ public class Operate extends BaseBo {
 
     private int operate;
 
-    private int sore;
+    private int score;
 
     private List<Integer> allowOperates;
 
@@ -18,12 +18,12 @@ public class Operate extends BaseBo {
         this.operate = operate;
     }
 
-    public int getSore() {
-        return sore;
+    public int getScore() {
+        return score;
     }
 
-    public void setSore(int sore) {
-        this.sore = sore;
+    public void setScore(int score) {
+        this.score = score;
     }
 
     public List<Integer> getAllowOperates() {

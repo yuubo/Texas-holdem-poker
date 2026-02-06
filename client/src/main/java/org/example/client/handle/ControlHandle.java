@@ -8,7 +8,9 @@ import org.example.common.bo.Message;
 import org.example.common.bo.Operate;
 import org.example.common.bo.Player;
 import org.example.common.enume.OperateEnum;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ControlHandle extends ChannelInboundHandlerAdapter {
 
     @Override
