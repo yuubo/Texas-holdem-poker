@@ -2,6 +2,7 @@ package org.example.common.utils;
 
 import org.example.common.init.MessageSourceUtils;
 
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -14,10 +15,10 @@ public class UserNameUtil {
     private static final Random randoms = new Random();
 
     public static String getUserName() {
+        lock.lock();
         if (nameList.isEmpty()) {
             init();
         }
-        lock.lock();
         try {
             return nameList.remove(randoms.nextInt(nameList.size()));
         } finally {
@@ -30,12 +31,20 @@ public class UserNameUtil {
             return;
         }
 
-        String[] prefix = MessageSourceUtils.getMessage("player.name.prefix").split(",");
-        String[] suffix = MessageSourceUtils.getMessage("player.name.suffix").split(",");
-        for (int i = 0; i < prefix.length; i++) {
-            for (int j = 0; j < suffix.length; j++) {
-                nameList.add(prefix[i] + suffix[j]);
+        String prefix = MessageSourceUtils.getMessage("player.name.prefix");
+        String suffix = MessageSourceUtils.getMessage("player.name.suffix");
+
+        String[] prefixArr = prefix.split(",");
+        String[] suffixArr = suffix.split(",");
+        for (int i = 0; i < prefixArr.length; i++) {
+            for (int j = 0; j < suffixArr.length; j++) {
+                nameList.add(prefixArr[i] + suffixArr[j]);
             }
         }
+    }
+
+    public static void main(String[] args) {
+        MessageFormat messageFormat = new MessageFormat("{0}不能为空");
+        System.out.println(messageFormat.format(new Object[]{"name"}));
     }
 }

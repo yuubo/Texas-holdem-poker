@@ -14,10 +14,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class InitUDPPipeline extends ChannelInitializer {
 
+    @Autowired
+    private ApplicationContext applicationContext;
+
     @Override
     protected void initChannel(Channel ch) throws Exception {
         ch.pipeline().addLast(new DatagramPacketToStrHandle());
         ch.pipeline().addLast(new StrToDatagramPacketHandle());
-        ch.pipeline().addLast(new UdpServiceHandle());
+        ch.pipeline().addLast(applicationContext.getBean(UdpServiceHandle.class));
     }
 }

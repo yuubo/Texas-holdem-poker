@@ -110,10 +110,13 @@ public class PokerUtils {
             sd.straightSuitsSet.add(poker.getSuits());
             for (int j = 1; j < 5; j++) {
                 Poker pNext = pkList.get(j + i);
-                if (poker.getNo() != pNext.getNo() + j && i == 2) {
-                    sd.straightSuitsSet.clear();
-                    sd.isStraight = false;
-                    break;
+                if (poker.getNo() != pNext.getNo() + j) {
+                    if (i == 2) {
+                        sd.straightSuitsSet.clear();
+                        sd.isStraight = false;
+                        break;
+                    }
+                    return;
                 }
                 sd.straightSuitsSet.add(pNext.getSuits());
                 if (j == 4) {

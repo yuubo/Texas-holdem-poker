@@ -106,7 +106,9 @@ public class OperateDispose {
      */
     private static void clearFillStatus(Player player) {
         player.getGameRound().getPlayerList().forEach((pl) -> {
-            if (pl != player && pl.getStatus() == PlayerStatusEnum.FILL.getStatus()) {
+            if (pl != player
+                    && pl.getStatus() == PlayerStatusEnum.FILL.getStatus()
+                    && pl.getStatus() != PlayerStatusEnum.ONLOOKER.getStatus()) {
                 pl.setStatus(PlayerStatusEnum.NORMAL.getStatus());
             }
         });

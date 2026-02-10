@@ -18,6 +18,9 @@ public class StrToDatagramPacketHandle extends ChannelOutboundHandlerAdapter {
         if (msg instanceof UdpMessage) {
             UdpMessage udpMessage = (UdpMessage) msg;
             String s = udpMessage.getMessage();
+            if (udpMessage.getTcpPort() != 0) {
+                s += "@" + udpMessage.getTcpPort();
+            }
             ByteBuf byteBuf = Unpooled.copiedBuffer(s.getBytes(StandardCharsets.UTF_8));
             ctx.writeAndFlush(new DatagramPacket(byteBuf, (InetSocketAddress) udpMessage.getSocketAddress()));
         } else {

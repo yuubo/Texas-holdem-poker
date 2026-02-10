@@ -13,11 +13,17 @@ import org.springframework.stereotype.Component;
 
 public class InitUDPPipeline extends ChannelInitializer {
 
+    private CheckServiceHandle checkServiceHandle;
+
+    public InitUDPPipeline(CheckServiceHandle checkServiceHandle) {
+        this.checkServiceHandle = checkServiceHandle;
+    }
+
     @Override
     protected void initChannel(Channel ch) throws Exception {
         ch.pipeline().addLast(new DatagramPacketToStrHandle());
         ch.pipeline().addLast(new StrToDatagramPacketHandle());
-        ch.pipeline().addLast(new CheckServiceHandle());
+        ch.pipeline().addLast(checkServiceHandle);
     }
 
 }

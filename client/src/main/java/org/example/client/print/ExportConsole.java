@@ -36,6 +36,7 @@ public class ExportConsole {
                 .print(gameRound.getScoreTotal()).print(" ")
                 .print(MessageSourceUtils.getMessage("service.gameround.print.hint.d"))
                 .print(gameRound.getScore()).print(" ");
+
         if (gameRound.getCommonPokerList() != null && !gameRound.getCommonPokerList().isEmpty()) {
             print.print(MessageSourceUtils.getMessage("service.gameround.print.hint.e"));
             for (Poker poker : gameRound.getCommonPokerList()) {
@@ -43,6 +44,7 @@ public class ExportConsole {
                         .print(PokerNoEnum.getValue(poker.getNo())).print(" ");
             }
         }
+
         print.println("");
         print.println(PrintColorEnum.GREEN, LINE);
 
@@ -76,6 +78,7 @@ public class ExportConsole {
                 .print(pl.getScoreTotal()).print(" ")
                 .print(MessageSourceUtils.getMessage("service.gameround.print.hint.i"))
                 .print(pl.getScore());
+
         if (pl.getStatus() == PlayerStatusEnum.BIG_BLIND.getStatus()) {
             print.print(PrintColorEnum.GREEN, MessageSourceUtils.getMessage("service.gameround.print.hint.j"));
         } else if (pl.getStatus() == PlayerStatusEnum.SMALL_BLIND.getStatus()) {

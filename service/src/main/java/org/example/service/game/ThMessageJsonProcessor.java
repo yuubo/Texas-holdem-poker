@@ -14,6 +14,7 @@ import java.util.Iterator;
 
 @Component
 public class ThMessageJsonProcessor implements MessageJsonProcessor {
+
     @Override
     public String process(BaseBo msg) {
         String msgJson = null;

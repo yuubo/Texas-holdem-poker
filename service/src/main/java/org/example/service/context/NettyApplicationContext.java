@@ -9,6 +9,7 @@ import jakarta.annotation.PostConstruct;
 import org.example.common.message.User;
 import org.example.common.utils.UserNameUtil;
 import org.example.service.channel.PokerChannel;
+import org.example.service.channel.PokerChannelStatusEnum;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -105,10 +106,12 @@ public class NettyApplicationContext implements ApplicationRunner, DisposableBea
                 add = false;
             } else {
                 if (object == this.pokerChannelMap) {
-                    add = new PokerChannel(channel, new User(UserNameUtil.getUserName()));
-                    Map<Channel, PokerChannel> map = pokerChannelMap.get(channel.eventLoop());
+                    String userName = UserNameUtil.getUserName();
+                    add = new PokerChannel(channel, new User(userName));
+                    LinkedHashMap<Channel, PokerChannel> map = pokerChannelMap.get(channel.eventLoop());
                     if (map == null) {
                         map = new LinkedHashMap<>();
+                        pokerChannelMap.put(channel.eventLoop(), map);
                     }
                     map.put(channel, (PokerChannel) add);
                 } else {
@@ -128,7 +131,11 @@ public class NettyApplicationContext implements ApplicationRunner, DisposableBea
             Object remove = null;
             if (object == this.pokerChannelMap) {
                 Map<Channel, PokerChannel> map = this.pokerChannelMap.get(channel.eventLoop());
-                return map == null ? null : map.remove(channel);
+                PokerChannel pokerChannel = map.get(channel);
+                if (pokerChannel != null) {
+                    pokerChannel.setStatus(PokerChannelStatusEnum.DISCONNECT.getStatus());
+                }
+                return pokerChannel;
             } else {
                 remove = this.noCheckList.remove(channel);
             }

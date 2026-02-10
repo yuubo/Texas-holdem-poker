@@ -45,7 +45,7 @@ public class ControlHandle extends SimpleChannelInboundHandler<BaseBo> {
     }
 
     private void messageHandle(Message massage) {
-        System.out.println(massage.getUser().getName() + ":" + massage.getMessage());
+        ExportConsole.println(massage);
     }
 
 }

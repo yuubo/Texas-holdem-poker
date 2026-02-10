@@ -5,9 +5,11 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import jakarta.annotation.PostConstruct;
 import org.example.client.handle.udp.QueryService;
+import org.example.client.runner.TcpClientRunner;
 import org.example.common.message.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.ApplicationContext;
@@ -27,9 +29,18 @@ public final class ClientApplicationContext implements ApplicationRunner {
     @Autowired
     private ApplicationContext applicationContext;
 
-    @Autowired
+    @Autowired(required = false)
     @Qualifier("udpBootstrap")
     private Bootstrap udpBootstrap;
+
+    @Autowired
+    private TcpClientRunner tcpClientRunner;
+
+    @Value("${netty.client.udp.host:255.255.255.255}")
+    private String udpHost;
+
+    @Value("${netty.client.udp.port}")
+    private int udpPort;
 
     @PostConstruct
     public void init() {
@@ -39,9 +50,14 @@ public final class ClientApplicationContext implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        ChannelFuture future = udpBootstrap.bind(0).sync();
-        System.out.println("启动UDP搜索服务");
-        future.channel().eventLoop().execute(QueryService.queryServiceFactory(future.channel()));
+        if (udpBootstrap != null) {
+            ChannelFuture future = udpBootstrap.bind(0).sync();
+            System.out.println("启动UDP搜索服务");
+            future.channel().eventLoop().execute(QueryService.queryServiceFactory(future.channel(),  udpHost, udpPort));
+        } else {
+            tcpClientRunner.runTcpClient();
+        }
+
     }
 
     public Channel getChannel() {

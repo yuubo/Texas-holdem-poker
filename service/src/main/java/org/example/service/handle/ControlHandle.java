@@ -55,15 +55,16 @@ public class ControlHandle extends SimpleChannelInboundHandler<BaseBo> {
         if (msg instanceof Message) {
             Message message = (Message) msg;
             if (message.getMessage().equals("天王盖地虎")) {
+                nettyApplicationContext.removeNoCheckList(ctx.channel());
                 PokerChannel pokerChannel = nettyApplicationContext.addPokerChanne(ctx.channel());
+                pokerContext.addPlayer(pokerChannel);
                 if (pokerChannel == null) {
                     ctx.writeAndFlush(SystemMessageUtils.stringMessage("服务器连接已满"));
                     ctx.close();
                 } else {
-                    System.out.println("回复验证");
-                    ctx.writeAndFlush(SystemMessageUtils.stringMessage(new User(UserNameUtil.getUserName()),"宝塔镇河妖"));
-                    nettyApplicationContext.removeNoCheckList(ctx.channel());
-                    pokerContext.addPlayer(pokerChannel);
+                    ctx.writeAndFlush(
+                            SystemMessageUtils.stringMessage(pokerChannel.getUser(),"宝塔镇河妖")
+                    );
                 }
 
             } else {

@@ -4,6 +4,7 @@ import io.netty.channel.EventLoop;
 import jakarta.annotation.PostConstruct;
 import org.example.common.message.Operate;
 import org.example.service.channel.PokerChannel;
+import org.example.service.channel.PokerChannelStatusEnum;
 import org.example.service.context.ApplicationContextGatherUtils;
 import org.example.service.context.PokerContext;
 import org.springframework.stereotype.Component;
@@ -27,7 +28,7 @@ public class ThPokerContext implements PokerContext {
     private PokerRoom createPokerRoom(EventLoop eventLoop) {
         PokerRoom pokerRoom = pokerRoomMap.get(eventLoop);
         if (pokerRoom == null) {
-            pokerRoom = new PokerRoom(eventLoop, roomId.incrementAndGet());
+            pokerRoom = new PokerRoom(eventLoop, roomId.getAndIncrement());
             pokerRoomMap.put(eventLoop, pokerRoom);
         }
         return pokerRoom;
@@ -44,12 +45,10 @@ public class ThPokerContext implements PokerContext {
     @Override
     public void addPlayer(PokerChannel pokerChannel) {
         PokerRoom pokerRoom = pokerRoomMap.get(pokerChannel.getChannel().eventLoop());
-        if (pokerRoom != null) {
-            pokerRoom.addPlayer(pokerChannel);
-        } else {
+        if (pokerRoom == null) {
             pokerRoom = createPokerRoom(pokerChannel.getChannel().eventLoop());
-            pokerRoom.addPlayer(pokerChannel);
         }
+        pokerRoom.addPlayer(pokerChannel);
     }
 
     @Override
@@ -63,6 +62,11 @@ public class ThPokerContext implements PokerContext {
     @Override
     public PokerRoom getPokerRoom(EventLoop eventLoop) {
         return pokerRoomMap.get(eventLoop);
+    }
+
+    @Override
+    public void disconnect(PokerChannel pokerChannel) {
+        pokerRoomMap.get(pokerChannel.getChannel().eventLoop()).disconnect(pokerChannel);
     }
 
 }

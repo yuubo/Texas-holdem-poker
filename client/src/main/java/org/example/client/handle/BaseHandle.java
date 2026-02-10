@@ -10,7 +10,13 @@ import org.springframework.stereotype.Component;
 public class BaseHandle extends ChannelHandlerAdapter {
 
     @Override
+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+        System.out.println("################################");
+    }
+
+    @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        System.out.println("EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
         cause.printStackTrace();
         ctx.close();
     }

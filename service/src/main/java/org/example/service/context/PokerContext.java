@@ -15,4 +15,6 @@ public interface PokerContext {
 
     PokerRoom getPokerRoom(EventLoop eventLoop);
 
+    void disconnect(PokerChannel pokerChannel);
+
 }

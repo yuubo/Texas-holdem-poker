@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 
 public class PokerRoom {
 
@@ -53,11 +54,12 @@ public class PokerRoom {
         try {
             pokerChannelList.add(pokerChannel);
             createPlayer(pokerChannel.getUser());
-            pokerChannel.
-                    getChannel().
-                    writeAndFlush(SystemMessageUtils.messageSource(pokerChannel.getUser(),
-                            "service.gameround.hint.g",
-                            new Object[]{roomId}));
+            System.out.println(pokerChannel.getUser().getName() + "加入房间" + roomId);
+            String name = pokerChannel.getUser().getName();
+            informPlayer(p -> {
+                Message s = SystemMessageUtils.messageSource("service.gameround.hint.g", new Object[]{name, roomId});
+                return s;
+            });
         } finally {
             lock.unlock();
         }
@@ -65,10 +67,11 @@ public class PokerRoom {
 
     public void start() {
         lock.lock();
-        if (gameRound.getStatus() == GameRoundStatusEnum.ACTIVITY.getStatus()) {
-            return;
-        }
         try {
+            if (gameRound.getStatus() == GameRoundStatusEnum.ACTIVITY.getStatus()) {
+                return;
+            }
+
             initialize();
             PokerUtils.createPoker(pokerList);
             initializePlayer();
@@ -79,15 +82,16 @@ public class PokerRoom {
     }
 
     private void initialize() {
-        gameIndex.setPlayIndex(0);
-
         Iterator<PokerChannel> iterator = pokerChannelList.iterator();
         while (iterator.hasNext()) {
             PokerChannel pokerChannel = iterator.next();
             if (pokerChannel.getStatus() == PokerChannelStatusEnum.DISCONNECT.getStatus()) {
+                playerMap.remove(pokerChannel.getUser());
                 iterator.remove();
             }
         }
+        gameIndex.setPlayIndex(0);
+        gameIndex.setPartyPlayerCount(pokerChannelList.size());
         gameRound.setScoreTotal(15);
         gameRound.setScore(10);
         gameRound.setStatus(GameRoundStatusEnum.ACTIVITY.getStatus());
@@ -97,24 +101,22 @@ public class PokerRoom {
     }
 
     private  void initializePlayer() {
-        int blindIndex = gameIndex.getPartyIndex() % pokerChannelList.size();
-        for (int i = 0; i < pokerChannelList.size(); i++) {
+        //盲注位置
+        int blindIndex = gameIndex.getPartyIndex() % gameIndex.getPartyPlayerCount();
+
+        for (int i = 0; i < gameIndex.getPartyPlayerCount(); i++) {
             PokerChannel pokerChannel = pokerChannelList.get(i);
 
-            Player player = null;
-            if (playerMap.containsKey(pokerChannel.getUser())) {
-                player = playerMap.get(pokerChannel.getUser());
-                if (player.getScoreTotal() < 10) {
-                    player.setStatus(PlayerStatusEnum.ONLOOKER.getStatus());
-                }
-
-                player.setGrade(0);
-                player.setActivity(PlayerActivityEnum.NORMAL.getNumber());
-                player.setStatus(PlayerStatusEnum.NORMAL.getStatus());
-                player.setPartyWinScore(0);
-            } else {
-                player = createPlayer(pokerChannel.getUser());
+            Player player = playerMap.get(pokerChannel.getUser());
+            if (player.getScoreTotal() < 10) {
+                player.setStatus(PlayerStatusEnum.ONLOOKER.getStatus());
             }
+
+            player.setGrade(0);
+            player.setActivity(PlayerActivityEnum.NORMAL.getNumber());
+            player.setStatus(PlayerStatusEnum.NORMAL.getStatus());
+            player.setPartyWinScore(0);
+            player.setPokers(PokerUtils.getPoker(2, pokerList));
 
             if (i == blindIndex) {
                 //大盲注
@@ -139,7 +141,6 @@ public class PokerRoom {
     private Player createPlayer(User user) {
         Player player = new Player();
         player.setId(player.hashCode() + user.hashCode());
-        player.setPokers(PokerUtils.getPoker(2, pokerList));
         player.setUser(user);
         player.setGameRound(gameRound);
         player.setScoreTotal(1000);
@@ -152,15 +153,16 @@ public class PokerRoom {
     }
 
     public void operateHandle(Operate operate, PokerChannel channel) {
+        if (operate.getOperate() == OperateEnum.START.getOperate()) {
+            start();
+            return;
+        }
+
         if (getPokerChannelByPlayerIndex() != channel || nowOperate == channel) {
             //判断是否是当前待操作玩家，或者当前玩家重复操作，则不处理
             return;
         }
 
-        if (operate.getOperate() == OperateEnum.START.getOperate()) {
-            start();
-            return;
-        }
         nowOperate = channel;
         Player player = playerMap.get(channel.getUser());
         player.setActivity(PlayerActivityEnum.NORMAL.getNumber());
@@ -175,12 +177,12 @@ public class PokerRoom {
     }
 
     private PokerChannel getPokerChannelByPlayerIndex() {
-        return pokerChannelList.get(gameIndex.getPlayIndex() % pokerChannelList.size());
+        return pokerChannelList.get(gameIndex.getPlayIndex() % gameIndex.getPartyPlayerCount());
     }
 
     private void next() {
         nowOperate = null;
-        if (playerMap.size() - 1 == gameRound.getFoldPlayerTCount()) {
+        if (gameIndex.getPartyPlayerCount() - 1 == gameRound.getFoldPlayerTCount()) {
             //弃牌只剩一个玩家时结束本局
             finish();
             return;
@@ -197,7 +199,7 @@ public class PokerRoom {
         }
 
         if (gameIndex.getPlayIndex() != gameIndex.getFillLastPlayIndex()
-                && gameIndex.getPlayIndex() - playerMap.size() == gameIndex.getFillLastPlayIndex()) {
+                && gameIndex.getPlayIndex() - gameIndex.getPartyPlayerCount() == gameIndex.getFillLastPlayIndex()) {
 
             if (pl.getScore() == gameRound.getScore()) {
                 pl.setStatus(PlayerStatusEnum.NORMAL.getStatus());
@@ -235,7 +237,7 @@ public class PokerRoom {
             pl.setActivity(PlayerActivityEnum.ACTIVITY.getNumber());
             pl.setStatus(PlayerStatusEnum.NORMAL.getStatus());
 
-            informHandle(null);
+            refreshPlayer();
 
             pokerChannel.getChannel().eventLoop().execute(() -> {
                 pokerChannel.getChannel().writeAndFlush(operate);
@@ -275,7 +277,7 @@ public class PokerRoom {
 
         List<Map.Entry<Integer, List<Player>>> gradeList = grade();
         ruling(gradeList);
-        informHandle(null);
+        refreshPlayer();
     }
 
     /**
@@ -416,11 +418,18 @@ public class PokerRoom {
 
     }
 
-    public void informHandle(PokerChannel excludeChannel) {
+    public void refreshPlayer() {
+        informPlayer((p) -> {
+            return playerMap.get(p.getUser());
+        });
+    }
+
+    public void informPlayer(Function<PokerChannel, BaseBo> function) {
         eventLoop.execute(() -> {
             pokerChannelList.forEach(pokerChannel -> {
-                if (pokerChannel != excludeChannel && pokerChannel.getStatus() != PokerChannelStatusEnum.DISCONNECT.getStatus()) {
-                    pokerChannel.getChannel().writeAndFlush(playerMap.get(pokerChannel.getUser()));
+                if (pokerChannel.getStatus() != PokerChannelStatusEnum.DISCONNECT.getStatus()) {
+                    BaseBo bo = function.apply(pokerChannel);
+                    pokerChannel.getChannel().writeAndFlush(bo);
                 }
             });
         });
@@ -433,5 +442,18 @@ public class PokerRoom {
 
     public int getRoomId() {
         return roomId;
+    }
+
+    public void disconnect(PokerChannel pokerChannel) {
+        Player player = playerMap.get(pokerChannel.getUser());
+
+        if (nowOperate == pokerChannel) {
+            nowOperate = null;
+            Operate operate = new Operate();
+            operate.setOperate(OperateEnum.FOLD.getOperate());
+            operateHandle(operate, pokerChannel);
+        } else {
+            player.setStatus(PlayerStatusEnum.FOLD.getStatus());
+        }
     }
 }

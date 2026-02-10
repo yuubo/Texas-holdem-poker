@@ -9,6 +9,11 @@ public class GameIndex {
     //每轮最后一个加注玩家 每局清零
     private int fillLastPlayIndex = 0;
 
+    /**
+     * 参与当前牌局玩家的数量 每局清零
+     */
+    private int partyPlayerCount;
+
     //玩家操作索引，每局清零
     private AtomicInteger playIndex = new AtomicInteger();
 
@@ -38,5 +43,13 @@ public class GameIndex {
 
     public void setFillLastPlayIndex(int i) {
         this.fillLastPlayIndex = i;
+    }
+
+    public int getPartyPlayerCount() {
+        return partyPlayerCount;
+    }
+
+    public void setPartyPlayerCount(int i) {
+        this.partyPlayerCount = i;
     }
 }

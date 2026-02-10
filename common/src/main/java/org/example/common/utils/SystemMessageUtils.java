@@ -25,4 +25,8 @@ public class SystemMessageUtils {
     public static Message messageSource(String code) {
         return messageSource(null, code, null);
     }
+
+    public static Message messageSource(String code, Object[] arg) {
+        return messageSource(null, code, arg);
+    }
 }
