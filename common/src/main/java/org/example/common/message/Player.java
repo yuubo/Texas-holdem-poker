@@ -1,4 +1,4 @@
-package org.example.common.bo;
+package org.example.common.message;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;

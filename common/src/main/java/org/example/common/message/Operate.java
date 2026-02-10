@@ -1,4 +1,4 @@
-package org.example.common.bo;
+package org.example.common.message;
 
 import java.util.List;
 
@@ -6,8 +6,14 @@ public class Operate extends BaseBo {
 
     private int operate;
 
+    /**
+     * 加注的筹码
+     */
     private int score;
 
+    /**
+     * 允许玩家操作的指令
+     */
     private List<Integer> allowOperates;
 
     public int getOperate() {

@@ -37,7 +37,7 @@ public class TcpClient {
                         break;
                     }
 
-                    channel.writeAndFlush(SystemMessageUtils.stringMessage(nextLine, null));
+                    channel.writeAndFlush(SystemMessageUtils.stringMessage(nextLine));
                 }
             }, "input").start();
 

@@ -2,7 +2,7 @@ package org.example.common.handle;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.example.common.bo.JsonObjectInfo;
+import org.example.common.message.JsonObjectInfo;
 import org.example.common.utils.JSONUtils;
 
 public class JsonToBOInboundHandle extends SimpleChannelInboundHandler<String> {

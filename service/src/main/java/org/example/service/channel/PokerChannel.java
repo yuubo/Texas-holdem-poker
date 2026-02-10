@@ -1,13 +1,18 @@
-package org.example.common.channel;
+package org.example.service.channel;
 
 import io.netty.channel.Channel;
-import org.example.common.bo.User;
+import org.example.common.message.User;
 
 public class PokerChannel {
 
     private Channel channel;
 
     private User user;
+
+    /**
+     * {@link org.example.service.channel.PokerChannelStatusEnum}
+     */
+    private int status;
 
     public PokerChannel(Channel channel, User user) {
         this.channel = channel;
@@ -28,6 +33,14 @@ public class PokerChannel {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
     }
 
 }

@@ -5,11 +5,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import org.example.client.context.ApplicationContextGatherUtils;
-import org.example.client.init.InitPipeline;
-import org.example.common.bo.Operate;
+import org.example.common.message.Operate;
 import org.example.common.enume.OperateEnum;
 import org.example.common.utils.SystemMessageUtils;
 import org.example.common.warp.UdpMessage;
@@ -18,7 +15,6 @@ import org.springframework.stereotype.Component;
 import java.net.InetSocketAddress;
 import java.util.Scanner;
 
-@Component
 public class CheckServiceHandle extends SimpleChannelInboundHandler<UdpMessage> {
 
     @Override
@@ -50,12 +46,6 @@ public class CheckServiceHandle extends SimpleChannelInboundHandler<UdpMessage> 
         Thread.ofVirtual().start(() -> {
             ChannelFuture future = null;
             try {
-                /* Bootstrap bootstrap = new Bootstrap();
-                bootstrap.group(new NioEventLoopGroup())
-                        .channel(NioSocketChannel.class)
-                        .handler(new InitPipeline());
-                System.out.println("开始连接TCP服务器: " + hostAddress);
-                future = bootstrap.connect(hostAddress, 8081).sync(); */
                 Bootstrap tcpBootstrap = ApplicationContextGatherUtils.applicationContext().getBean("tcpBootstrap", Bootstrap.class);
                 future = tcpBootstrap.connect(hostAddress, 8081).sync();
 
@@ -117,6 +107,6 @@ public class CheckServiceHandle extends SimpleChannelInboundHandler<UdpMessage> 
 
     private void sendSecurityCode(Channel channel) {
         System.out.println("发送验证");
-        channel.writeAndFlush(SystemMessageUtils.stringMessage("天王盖地虎", null));
+        channel.writeAndFlush(SystemMessageUtils.stringMessage("天王盖地虎"));
     }
 }

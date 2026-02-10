@@ -42,30 +42,13 @@ public class InitConfig {
     }
 
     @Bean
-    public Bootstrap tcpBootstrap(EventLoopGroup eventLoopGroup) {
+    public Bootstrap tcpBootstrap(InitPipeline initPipeline) {
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(new NioEventLoopGroup())
                 .channel(NioSocketChannel.class)
                 //.option(ChannelOption.SO_KEEPALIVE, true)
-                .handler(new InitPipeline());
+                .handler(initPipeline);
         return bootstrap;
-    }
-
-    @Bean
-    public DelimiterBasedFrameDecoder delimiterBasedFrameDecoder() {
-        int maxLength = 1024 * 1024;
-        ByteBuf byteBuf = Unpooled.copiedBuffer(CommonConstant.MESSAGE_END_MARK.getBytes(StandardCharsets.UTF_8));
-        return new DelimiterBasedFrameDecoder(maxLength, byteBuf);
-    }
-
-    @Bean
-    public StringDecoder stringDecoder() {
-        return new StringDecoder(StandardCharsets.UTF_8);
-    }
-
-    @Bean
-    public StringEncoder stringEncoder() {
-        return new StringEncoder(StandardCharsets.UTF_8);
     }
 
 }
