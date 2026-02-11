@@ -15,6 +15,8 @@ public class Player extends BaseBo {
 
     private List<Poker> pokers;
 
+    private List<Poker> winPokers;
+
     private GameRound gameRound;
 
     /**
@@ -191,5 +193,13 @@ public class Player extends BaseBo {
 
     public void setExcessiveScore(BigDecimal excessiveScore) {
         this.excessiveScore = excessiveScore;
+    }
+
+    public List<Poker> getWinPokers() {
+        return winPokers;
+    }
+
+    public void setWinPokers(List<Poker> winPokers) {
+        this.winPokers = winPokers;
     }
 }

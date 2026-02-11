@@ -1,5 +1,7 @@
 package org.example.service.game;
 
+import org.example.common.message.Player;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class GameIndex {
@@ -7,7 +9,7 @@ public class GameIndex {
     private int partyIndex = 0;
 
     //每轮最后一个加注玩家 每局清零
-    private volatile int fillLastPlayIndex = 0;
+    private volatile LastPlayer lastPlayer = new LastPlayer();
 
     /**
      * 参与当前牌局玩家的数量 每局清零
@@ -37,14 +39,6 @@ public class GameIndex {
         this.partyIndex ++;
     }
 
-    public int getFillLastPlayIndex() {
-        return fillLastPlayIndex;
-    }
-
-    public void setFillLastPlayIndex(int i) {
-        this.fillLastPlayIndex = i;
-    }
-
     public int getPartyPlayerCount() {
         return partyPlayerCount;
     }
@@ -53,13 +47,46 @@ public class GameIndex {
         this.partyPlayerCount = i;
     }
 
+    public LastPlayer getLastPlayer() {
+        return lastPlayer;
+    }
+
+    public void setLastPlayer(LastPlayer lastPlayer) {
+        this.lastPlayer = lastPlayer;
+    }
+
     @Override
     public String toString() {
         return "GameIndex{" +
                 "partyIndex=" + partyIndex +
-                ", fillLastPlayIndex=" + fillLastPlayIndex +
                 ", partyPlayerCount=" + partyPlayerCount +
                 ", playIndex=" + playIndex +
+                ", lastPlayer=" + lastPlayer.index() +
+                ", player=" + lastPlayer.player().getUser().getName() +
                 '}';
+    }
+
+    public class LastPlayer {
+        private Player player;
+        private int index;
+        public LastPlayer() {
+            this.player = player;
+            this.index = index;
+        }
+        public Player player() {
+            return player;
+        }
+        public int index() {
+            return index;
+        }
+
+        public LastPlayer player(Player player) {
+            this.player = player;
+            return this;
+        }
+        public LastPlayer index(int index) {
+            this.index = index;
+            return this;
+        }
     }
 }

@@ -64,7 +64,7 @@ public class OperateDispose {
                 player.getGameRound().setScore(player.getScoreTotal());
                 player.setScore(player.getScore() + player.getScoreTotal());
                 player.setScoreTotal(0);
-                gameIndex.setFillLastPlayIndex(gameIndex.getPlayIndex());
+                gameIndex.getLastPlayer().player(player).index(gameIndex.getPlayIndex());
             } else {
                 player.getGameRound().setScoreTotal(player.getGameRound().getScoreTotal() + player.getScoreTotal());
                 player.setScore(player.getScore() + player.getScoreTotal());
@@ -95,10 +95,10 @@ public class OperateDispose {
             player.setScoreTotal(player.getScoreTotal() - operate.getScore());
             player.getGameRound().setScoreTotal(player.getGameRound().getScoreTotal() + operate.getScore());
             player.getGameRound().setScore(player.getScore());
-            gameIndex.setFillLastPlayIndex(gameIndex.getPlayIndex());
+            gameIndex.getLastPlayer().player(player).index(gameIndex.getPlayIndex());
             return true;
         }
-        return fold(player, operate);
+        return fold(player, channel, operate);
     }
 
     /**
@@ -117,13 +117,14 @@ public class OperateDispose {
     /**
      * 弃牌
      */
-    private static boolean fold(Player player, Operate operate) {
+    private static boolean fold(Player player, PokerChannel channel, Operate operate) {
         if (operate.getOperate() == OperateEnum.FOLD.getOperate()) {
             //弃牌
             player.setStatus(PlayerStatusEnum.FOLD.getStatus());
             player.getGameRound().setFoldPlayerTCount(player.getGameRound().getFoldPlayerTCount() + 1);
             return true;
         }
+        channel.getChannel().writeAndFlush(SystemMessageUtils.messageSource("service.gameround.hint.f"));
         return false;
     }
 }

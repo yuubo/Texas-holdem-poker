@@ -8,7 +8,7 @@ public class ExportConsole {
 
     private static Print print = new Print();
 
-    private static final String LINE = "------------------------------------------------------------------";
+    private static final String LINE = "-----------------------------------------------------------------------------------------------";
 
     public static void print(Operate operate) {
         print.print(PrintColorEnum.GREEN, MessageSourceUtils.getMessage("service.gameround.print.hint.a"));
@@ -25,7 +25,9 @@ public class ExportConsole {
             print.print(PrintColorEnum.RED, MessageSourceUtils.getMessage("service.gameround.print.hint.b"))
                     .println(message.getMessage());
         } else {
-            print.println(PrintColorEnum.BLUE, message.getUser().getName()+":"+message.getMessage());
+            print.print(PrintColorEnum.BLUE, message.getUser().getName())
+                    .print(PrintColorEnum.BLUE, ":")
+                    .println(message.getMessage());
         }
     }
 
@@ -95,12 +97,26 @@ public class ExportConsole {
 
         if (gameRound.getStatus() == GameRoundStatusEnum.FINISH.getStatus()) {
             if (pl.getPartyWinScore() > 0) {
-                print.print(PrintColorEnum.RED, PokerTypeEnum.getPokerTypeEnum(pl.getPokerType()))
-                        .print(PrintColorEnum.RED, MessageSourceUtils.getMessage("service.gameround.print.hint.m"))
-                        .print(PrintColorEnum.RED, pl.getPartyWinScore());
+                print.print(PrintColorEnum.RED, PokerTypeEnum.getPokerTypeEnum(pl.getPokerType()));
             } else if (pl.getStatus() != PlayerStatusEnum.FOLD.getStatus()) {
                 print.print(PrintColorEnum.CYAN, PokerTypeEnum.getPokerTypeEnum(pl.getPokerType()));
             }
+
+            if (pl.getWinPokers() != null && !pl.getWinPokers().isEmpty()) {
+                for (Poker poker : pl.getWinPokers()) {
+                    print.print(suitsColor(poker.getSuits()))
+                            .print(PokerNoEnum.getValue(poker.getNo()))
+                            .print(" ");
+                }
+            }
+
+            print.print(" ");
+
+            if (pl.getPartyWinScore() > 0) {
+                print.print(PrintColorEnum.RED, MessageSourceUtils.getMessage("service.gameround.print.hint.m"))
+                        .print(PrintColorEnum.RED, pl.getPartyWinScore());
+            }
+
         } else {
             if (pl.getStatus() == PlayerStatusEnum.FILL.getStatus()) {
                 print.print(PrintColorEnum.GREEN, MessageSourceUtils.getMessage("service.gameround.print.hint.n"));
