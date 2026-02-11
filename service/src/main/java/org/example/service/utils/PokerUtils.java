@@ -60,7 +60,7 @@ public class PokerUtils {
         }
 
         //根据牌型计算得分
-        calculateScore(sd, player, pkList);
+        calculateScore(sd, player);
 
     }
 
@@ -71,13 +71,8 @@ public class PokerUtils {
         for (int i = 0; i < pkList.size(); i++) {
             Poker poker = pkList.get(i);
 
-            /*顺子检查*/
+            /*顺子、同花顺检查*/
             checkStraight(pkList, sd, poker, i);
-
-            if (Boolean.TRUE == sd.isStraight) {
-                /*如果满足顺子条件，则没必要再进行其他牌型处理*/
-                break;
-            }
 
             /*将数字相同的牌放在一起*/
             List<Poker> list = null;
@@ -107,22 +102,46 @@ public class PokerUtils {
      */
     private static void checkStraight(List<Poker> pkList, ScoreData sd, Poker poker, int i) {
         if (i < 3 && sd.isStraight == null) {
-            sd.straightSuitsSet.add(poker.getSuits());
-            for (int j = 1; j < 5; j++) {
-                Poker pNext = pkList.get(j + i);
-                if (poker.getNo() != pNext.getNo() + j) {
+            sd.straightSuitsMap.put(poker.getSuits(), 1);
+            Poker pPre = null;
+            int checkCount = 1;
+            for (int j = 1;;j++) {
+                int iNext = i + j;
+                if (i + j >= pkList.size()) {
+                    sd.isStraight = false;
+                    return;
+                }
+
+                Poker pNext = pkList.get(iNext);
+                if (pPre != null && pPre.getNo() == pNext.getNo()) {
+                    continue;
+                }
+
+                if (poker.getNo() != (pNext.getNo() + checkCount)) {
                     if (i == 2) {
-                        sd.straightSuitsSet.clear();
                         sd.isStraight = false;
-                        break;
+                    }
+                    sd.straightSuitsMap.clear();
+                    return;
+                }
+
+                if (sd.straightSuitsMap.containsKey(pNext.getSuits())) {
+                    sd.straightSuitsMap.put(pNext.getSuits(), sd.straightSuitsMap.get(pNext.getSuits()) + 1);
+                } else {
+                    sd.straightSuitsMap.put(pNext.getSuits(), 1);
+                }
+
+                checkCount ++;
+                if (checkCount == 5) {
+                    sd.straightMax = poker;
+                    sd.isStraight = true;
+                    Integer max = sd.straightSuitsMap.values().stream().max(Integer::compareTo).get();
+                    if (max == 5) {
+                        sd.isStraightSuits = true;
                     }
                     return;
                 }
-                sd.straightSuitsSet.add(pNext.getSuits());
-                if (j == 4) {
-                    sd.straightMax = poker;
-                    sd.isStraight = true;
-                }
+                pPre = pNext;
             }
         }
     }
@@ -131,100 +150,105 @@ public class PokerUtils {
      * 计算得分
      * 单牌+0 对子+100 两对+200 三张+300 顺子+400 同花+500 葫芦+1000 四条+2000 同花顺+3000
      */
-    private static void calculateScore(ScoreData sd, Player player, List<Poker> pkList) {
-        if (!straight(sd, player))
-            if (!highCard(sd, player, pkList))
-                if (!pair(sd, player, pkList))
-                    if (!doublePairAndThree(sd, player))
-                        if (!gourdAndFour(sd, player))
-                            throw new RuntimeException("牌型错误");
+    public static void calculateScore(ScoreData sd, Player player) {
+        if (straightFlush(sd, player)) {
+            //同花顺
+            return;
+        }
+        if (sd.pl.getFirst().size() == 4) {
+            //四条
+            player.setPokerType(PokerTypeEnum.H.getType());
+            player.setGrade(sd.pl.getFirst().getFirst().getNo() + 2000);
+            return;
+        }
+        if (sd.pl.getFirst().size() == 3) {
+            if (sd.pl.get(1).size() > 1) {
+                //葫芦
+                player.setPokerType(PokerTypeEnum.G.getType());
+                int score = sd.pl.getFirst().getFirst().getNo() * 20 + 1000;
+                score += sd.pl.getLast().getFirst().getNo();
+                player.setGrade(score);
+                return;
+            } else {
+                //同花或顺子
+                if (sameSuit(sd, player) || straight(sd, player)) {
+                    return;
+                }
+                //三张
+                player.setPokerType(PokerTypeEnum.D.getType());
+                player.setGrade(sd.pl.getFirst().getFirst().getNo() + 300);
+                return;
+            }
+        } else {
+            //同花或顺子
+            if (sameSuit(sd, player) || straight(sd, player)) {
+                return;
+            }
+
+            if (sd.pl.getFirst().size() == 2) {
+                if (sd.pl.get(1).size() == 2) {
+                    //两对
+                    player.setPokerType(PokerTypeEnum.C.getType());
+                    player.setGrade(sd.pl.getFirst().getFirst().getNo() + 200);
+                    return;
+                } else {
+                    //对子
+                    player.setPokerType(PokerTypeEnum.B.getType());
+                    player.setGrade(sd.pl.getFirst().getFirst().getNo() + 100);
+                    return;
+                }
+            }
+
+            if (sd.pl.getFirst().size() == 1) {
+                //单牌
+                player.setPokerType(PokerTypeEnum.A.getType());
+                player.setGrade(sd.pl.getFirst().getFirst().getNo());
+                return;
+            }
+        }
+
+        throw new RuntimeException("未知牌型");
+    }
+
+    /**
+     * 同花顺
+     */
+    public static boolean straightFlush(ScoreData sd, Player player) {
+        if (sd.isStraightSuits) {
+            //同花顺
+            player.setPokerType(PokerTypeEnum.I.getType());
+            player.setGrade(sd.pl.getFirst().getFirst().getNo() + 3000);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 同花
+     */
+    public static boolean sameSuit(ScoreData sd, Player player) {
+        Integer max = sd.suitsMap.values().stream().max(Integer::compareTo).get();
+        if (max > 5) {
+            //同花
+            player.setPokerType(PokerTypeEnum.F.getType());
+            player.setGrade(sd.pl.getFirst().getFirst().getNo() + 500);
+            return true;
+        }
+        return false;
     }
 
     /**
      * 顺子
      */
     public static boolean straight(ScoreData sd, Player player) {
+        //顺子 同花 同花顺
         if (Boolean.TRUE == sd.isStraight) {
-            //顺子 同花顺
-            if (sd.straightSuitsSet.size() == 1) {
-                //同花顺
-                player.setPokerType(PokerTypeEnum.I.getType());
-                player.setGrade(sd.pl.getFirst().getFirst().getNo() + 3000);
-            } else {
-                //顺子
-                player.setPokerType(PokerTypeEnum.E.getType());
-                player.setGrade(sd.pl.getFirst().getFirst().getNo() + 400);
-            }
+            //顺子
+            player.setPokerType(PokerTypeEnum.E.getType());
+            player.setGrade(sd.pl.getFirst().getFirst().getNo() + 400);
             return true;
         }
-        return false;
-    }
 
-    /**
-     * 高牌
-     */
-    public static boolean highCard(ScoreData sd, Player player, List<Poker> pkList) {
-        if (sd.pl.size() == 7) {
-            //单牌
-            player.setPokerType(PokerTypeEnum.A.getType());
-            player.setGrade(pkList.getFirst().getNo());
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * 对子
-     */
-    public static boolean pair(ScoreData sd, Player player, List<Poker> pkList) {
-        if (sd.pl.size() == 7) {
-            //单牌
-            player.setPokerType(PokerTypeEnum.A.getType());
-            player.setGrade(pkList.getFirst().getNo());
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * 对子或三张
-     */
-    public static boolean doublePairAndThree(ScoreData sd, Player player) {
-        if (sd.pl.size() == 5) {
-            //两对 三张
-            if (sd.pl.getFirst().size() == 2) {
-                //两对
-                player.setPokerType(PokerTypeEnum.C.getType());
-                player.setGrade(sd.pl.getFirst().getFirst().getNo() + 200);
-            } else {
-                //三张
-                player.setPokerType(PokerTypeEnum.D.getType());
-                player.setGrade(sd.pl.getFirst().getFirst().getNo() + 300);
-            }
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * 葫芦或四条
-     */
-    public static boolean gourdAndFour(ScoreData sd, Player player) {
-        if (sd.pl.size() == 4) {
-            //葫芦 四条
-            if (sd.pl.getFirst().size() == 3) {
-                //葫芦 三张牌面分乘20加基数再加两对牌面分 确保44433比333AA分数大
-                player.setPokerType(PokerTypeEnum.G.getType());
-                int score = sd.pl.getFirst().getFirst().getNo() * 20 + 1000;
-                score += sd.pl.getLast().getFirst().getNo();
-                player.setGrade(score);
-            } else {
-                //四条
-                player.setPokerType(PokerTypeEnum.H.getType());
-                player.setGrade(sd.pl.getFirst().getFirst().getNo() + 2000);
-            }
-            return true;
-        }
         return false;
     }
 
@@ -243,7 +267,7 @@ public class PokerUtils {
         /**
          * 判断顺子是否花色相同
          */
-        final Set<Integer> straightSuitsSet = new HashSet<>();
+        final Map<Integer, Integer> straightSuitsMap = new HashMap<>();
 
         /**
          * 顺子中最大的牌
@@ -254,6 +278,52 @@ public class PokerUtils {
          * 是否是顺子
          */
         Boolean isStraight = null;
+
+        /**
+         * 是否同花顺
+         */
+        boolean isStraightSuits = false;
     }
 
+    public static void main(String[] args) {
+        List<Poker> pokerList = new ArrayList<>();
+        Poker poker = new Poker();
+        poker.setNo(9);
+        poker.setSuits(1);
+        pokerList.add(poker);
+
+        poker = new Poker();
+        poker.setNo(4);
+        poker.setSuits(1);
+        pokerList.add(poker);
+
+        poker = new Poker();
+        poker.setNo(3);
+        poker.setSuits(1);
+        pokerList.add(poker);
+
+        poker = new Poker();
+        poker.setNo(5);
+        poker.setSuits(1);
+        pokerList.add(poker);
+
+        poker = new Poker();
+        poker.setNo(11);
+        poker.setSuits(1);
+        pokerList.add(poker);
+
+        poker = new Poker();
+        poker.setNo(6);
+        poker.setSuits(2);
+        pokerList.add(poker);
+
+        poker = new Poker();
+        poker.setNo(12);
+        poker.setSuits(3);
+        pokerList.add(poker);
+
+        Player player = new Player();
+        PokerUtils.grade(pokerList, player);
+        System.out.println(player.getGrade() + "--" + PokerTypeEnum.getPokerTypeEnum(player.getPokerType()));
+    }
 }

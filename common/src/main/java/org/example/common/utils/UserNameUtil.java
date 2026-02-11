@@ -38,13 +38,9 @@ public class UserNameUtil {
         String[] suffixArr = suffix.split(",");
         for (int i = 0; i < prefixArr.length; i++) {
             for (int j = 0; j < suffixArr.length; j++) {
-                nameList.add(prefixArr[i] + suffixArr[j]);
+                nameList.add(prefixArr[i].trim() + suffixArr[j].trim());
             }
         }
     }
 
-    public static void main(String[] args) {
-        MessageFormat messageFormat = new MessageFormat("{0}不能为空");
-        System.out.println(messageFormat.format(new Object[]{"name"}));
-    }
 }

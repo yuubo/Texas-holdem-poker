@@ -82,6 +82,7 @@ public class PokerRoom {
     }
 
     private void initialize() {
+        pokerList.clear();
         Iterator<PokerChannel> iterator = pokerChannelList.iterator();
         while (iterator.hasNext()) {
             PokerChannel pokerChannel = iterator.next();
@@ -96,8 +97,7 @@ public class PokerRoom {
         gameRound.setScore(10);
         gameRound.setStatus(GameRoundStatusEnum.ACTIVITY.getStatus());
         gameRound.setFoldPlayerTCount(0);
-
-        pokerList.clear();
+        gameRound.getCommonPokerList().clear();
     }
 
     private  void initializePlayer() {
@@ -190,16 +190,19 @@ public class PokerRoom {
         PokerChannel pokerChannel = getPokerChannelByPlayerIndex();
         User user = pokerChannel.getUser();
         Player pl = playerMap.get(user);
-        if (pl.getStatus() == PlayerStatusEnum.FOLD.getStatus()
-                || pl.getStatus() == PlayerStatusEnum.ONLOOKER.getStatus()) {
-
+        if (pl.getStatus() == PlayerStatusEnum.ONLOOKER.getStatus()) {
+            next();
+            return;
+        }
+        if (pl.getStatus() == PlayerStatusEnum.FOLD.getStatus()) {
             gameIndex.playIndexAdd();
             next();
             return;
         }
 
+        System.out.println(gameIndex);
         if (gameIndex.getPlayIndex() != gameIndex.getFillLastPlayIndex()
-                && gameIndex.getPlayIndex() - gameIndex.getPartyPlayerCount() == gameIndex.getFillLastPlayIndex()) {
+                && (gameIndex.getPlayIndex() - gameIndex.getPartyPlayerCount() + 1) == gameIndex.getFillLastPlayIndex()) {
 
             if (pl.getScore() == gameRound.getScore()) {
                 pl.setStatus(PlayerStatusEnum.NORMAL.getStatus());
@@ -207,6 +210,7 @@ public class PokerRoom {
                     finish();
                 } else {
                     pl.setActivity(PlayerActivityEnum.ACTIVITY.getNumber());
+                    gameIndex.setFillLastPlayIndex(gameIndex.getPlayIndex());
                     sendCommonPoker();
                 }
                 return;
@@ -248,7 +252,6 @@ public class PokerRoom {
     }
 
     private void sendCommonPoker() {
-        gameIndex.setFillLastPlayIndex(gameIndex.getPlayIndex());
         int limit = 1;
         if (gameRound.getCommonPokerList().isEmpty()) {
             limit = 3;
@@ -276,7 +279,12 @@ public class PokerRoom {
         gameRound.setCalculateScore(BigDecimal.valueOf(gameRound.getScore()));
 
         List<Map.Entry<Integer, List<Player>>> gradeList = grade();
+        //给赢家分配筹码
         ruling(gradeList);
+
+        //玩家得分类型转换
+        transitionScoreType();
+
         refreshPlayer();
     }
 
@@ -291,6 +299,7 @@ public class PokerRoom {
                     || player.getStatus() == PlayerStatusEnum.ONLOOKER.getStatus()) {
                 continue;
             }
+
             List<Poker> pokers = new ArrayList<>();
             pokers.addAll(player.getPokers());
             pokers.addAll(gameRound.getCommonPokerList());
@@ -298,7 +307,8 @@ public class PokerRoom {
             PokerUtils.grade(pokers, player);
             player.setCalculateScore(BigDecimal.valueOf(player.getScore()));
             player.setCalculateTotalScore(BigDecimal.valueOf(player.getScoreTotal()));
-            player.setCalculatePartyWinScore(BigDecimal.ZERO);
+            player.setCalculatePartyWinScore(BigDecimal.valueOf(0));
+            player.setExcessiveScore(BigDecimal.valueOf(0));
 
             List<Player> list = null;
             if (lastPlayerMap.containsKey(player.getGrade())) {
@@ -309,9 +319,9 @@ public class PokerRoom {
             }
             list.add(player);
         }
+
         List<Map.Entry<Integer, List<Player>>> list = new ArrayList<>(lastPlayerMap.entrySet());
         Collections.sort(list, (o1, o2) -> o2.getKey() - o1.getKey());
-
         return list;
     }
 
@@ -320,7 +330,8 @@ public class PokerRoom {
      * @param gradeList
      */
     private void ruling(List<Map.Entry<Integer, List<Player>>> gradeList) {
-        Map<BigDecimal, Map<Player, BigDecimal>> proportionMap = new HashMap<>();
+        //赢家分账比例 key:输家下注 value: k玩家--v分账比例
+        Map<String, Map<Player, BigDecimal>> proportionMap = new HashMap<>();
 
         for (int i = 0; i < gradeList.size(); i++) {
 
@@ -334,12 +345,12 @@ public class PokerRoom {
                     if (pl == winPlayer ){
                         //赢家自己的下注筹码直接返还
                         gameRound.setCalculateScoreTotal(gameRound.getCalculateScoreTotal().subtract(winPlayer.getCalculateScore()));
-                        winPlayer.getCalculatePartyWinScore().add(winPlayer.getCalculateScore());
+                        winPlayer.setCalculatePartyWinScore(winPlayer.getCalculatePartyWinScore().add(winPlayer.getCalculateScore()));
                     } else {
                         //筹码扣完、观众、pl分数比当前赢家高时跳过处理
-                        if (pl.getCalculateScore().compareTo(BigDecimal.ONE) < 1
-                                || pl.getGrade() >= winPlayer.getGrade()
-                                || pl.getStatus() == PlayerStatusEnum.ONLOOKER.getStatus()) {
+                        if (pl.getStatus() == PlayerStatusEnum.ONLOOKER.getStatus()
+                                || pl.getCalculateScore().compareTo(BigDecimal.ONE) < 1
+                                || pl.getGrade() >= winPlayer.getGrade()) {
 
                             continue;
                         }
@@ -352,20 +363,21 @@ public class PokerRoom {
                             score = maxScore;
                         }
 
-                        if (!proportionMap.containsKey(pl.getCalculateScore())
-                                || !proportionMap.get(pl.getCalculateScore()).containsKey(pl)) {
+                        if (!proportionMap.containsKey(pl.getCalculateScore().toPlainString())
+                                || !proportionMap.get(pl.getCalculateScore().toPlainString()).containsKey(pl)) {
 
                             proportionCalculate(gradePlayerEntry.getValue(), pl.getCalculateScore(), proportionMap);
                         }
 
-                        BigDecimal proportion = proportionMap.get(pl.getCalculateScore()).get(pl);
+                        String key = pl.getCalculateScore().toPlainString();
+                        BigDecimal proportion = proportionMap.get(key).get(winPlayer);
                         //赢家取走的筹码
                         BigDecimal takenAway = score.multiply(proportion);
 
-                        winPlayer.getCalculateTotalScore().add(takenAway);
-                        winPlayer.getCalculatePartyWinScore().add(takenAway);
-                        gameRound.getCalculateScoreTotal().subtract(takenAway);
-                        pl.getCalculateScore().subtract(takenAway);
+                        winPlayer.setCalculateTotalScore(winPlayer.getCalculateTotalScore().add(takenAway));
+                        winPlayer.setCalculatePartyWinScore(winPlayer.getCalculatePartyWinScore().add(takenAway));
+                        gameRound.setCalculateScoreTotal(gameRound.getCalculateScoreTotal().subtract(takenAway));
+                        pl.setCalculateScore(pl.getCalculateScore().subtract(takenAway));
                     }
 
                     if (gameRound.getCalculateScoreTotal().compareTo(BigDecimal.ONE) < 1) {
@@ -374,6 +386,16 @@ public class PokerRoom {
                 }
             }
         }
+    }
+
+    /**
+     * 玩家得分转换
+     */
+    private void transitionScoreType() {
+        playerMap.values().forEach((pl) -> {
+            pl.setScoreTotal(pl.getCalculateTotalScore().intValue() + pl.getExcessiveScore().intValue());
+            pl.setPartyWinScore(pl.getCalculatePartyWinScore().intValue());
+        });
     }
 
     /**
@@ -389,26 +411,26 @@ public class PokerRoom {
     }
 
     private void proportionCalculate(List<Player> winPlayerList, BigDecimal loserPlayScore,
-                             Map<BigDecimal, Map<Player, BigDecimal>> proportionMap) {
+                             Map<String, Map<Player, BigDecimal>> proportionMap) {
 
-        BigDecimal total = BigDecimal.ZERO;
-        winPlayerList.stream().forEach(player -> {
+        BigDecimal total = BigDecimal.valueOf(0);
+        for (Player player : winPlayerList) {
             if (player.getCalculateScore().compareTo(loserPlayScore) > 0) {
                 /*赢家的下注筹码比输家多时，实际下注筹码只能等于输家的下注筹码
                  *比如A和B玩家都ALLIN，A有60筹码，B有100筹码，B赢也只能赢60筹码，相当于B也下注60
                  */
-                total.add(loserPlayScore);
+                total = total.add(loserPlayScore);
             } else {
-                total.add(player.getCalculateScore());
+                total = total.add(player.getCalculateScore());
             }
-        });
+        }
 
         Map<Player, BigDecimal> map = null;
         for (Player player : winPlayerList) {
             map = proportionMap.get(loserPlayScore);
             if (map == null) {
                 map = new HashMap<>();
-                proportionMap.put(loserPlayScore, map);
+                proportionMap.put(loserPlayScore.toPlainString(), map);
             }
 
             BigDecimal proportion = player.getCalculateScore().divide(total, SCALE, ROUNDING_MODE);
@@ -445,6 +467,7 @@ public class PokerRoom {
     }
 
     public void disconnect(PokerChannel pokerChannel) {
+        pokerChannel.setStatus(PokerChannelStatusEnum.DISCONNECT.getStatus());
         Player player = playerMap.get(pokerChannel.getUser());
 
         if (nowOperate == pokerChannel) {
@@ -455,5 +478,12 @@ public class PokerRoom {
         } else {
             player.setStatus(PlayerStatusEnum.FOLD.getStatus());
         }
+    }
+
+    public static void main(String[] args) {
+        BigDecimal a = BigDecimal.valueOf(0);
+        BigDecimal b = BigDecimal.valueOf(100);
+        a.add(b);
+        System.out.println(a);
     }
 }

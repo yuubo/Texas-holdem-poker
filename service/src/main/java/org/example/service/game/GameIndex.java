@@ -7,7 +7,7 @@ public class GameIndex {
     private int partyIndex = 0;
 
     //每轮最后一个加注玩家 每局清零
-    private int fillLastPlayIndex = 0;
+    private volatile int fillLastPlayIndex = 0;
 
     /**
      * 参与当前牌局玩家的数量 每局清零
@@ -51,5 +51,15 @@ public class GameIndex {
 
     public void setPartyPlayerCount(int i) {
         this.partyPlayerCount = i;
+    }
+
+    @Override
+    public String toString() {
+        return "GameIndex{" +
+                "partyIndex=" + partyIndex +
+                ", fillLastPlayIndex=" + fillLastPlayIndex +
+                ", partyPlayerCount=" + partyPlayerCount +
+                ", playIndex=" + playIndex +
+                '}';
     }
 }

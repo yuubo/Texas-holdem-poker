@@ -132,9 +132,7 @@ public class NettyApplicationContext implements ApplicationRunner, DisposableBea
             if (object == this.pokerChannelMap) {
                 Map<Channel, PokerChannel> map = this.pokerChannelMap.get(channel.eventLoop());
                 PokerChannel pokerChannel = map.get(channel);
-                if (pokerChannel != null) {
-                    pokerChannel.setStatus(PokerChannelStatusEnum.DISCONNECT.getStatus());
-                }
+                map.remove(channel);
                 return pokerChannel;
             } else {
                 remove = this.noCheckList.remove(channel);
