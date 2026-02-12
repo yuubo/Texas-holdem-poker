@@ -1,6 +1,7 @@
 # Texas Hold'em Poker（德州扑克 - Netty网络版）
 
-本项目是一个基于Netty框架开发的德州扑克（Texas Hold'em Poker）游戏，采用Spring Boot架构，支持多玩家在局域网环境下进行实时对战。游戏采用控制台界面进行操作，可以部署到idea、eclipse中，闲暇时与同事娱乐消遣。
+本项目是一个基于Netty框架开发的德州扑克（Texas Hold'em Poker）游戏，采用Spring Boot架构，支持多玩家在局域网环境下进行实时对战。游戏采用控制台界面进行操作，可以部署到idea、eclipse中，闲暇时与同事娱乐消遣。  
+![q](https://github.com/yuubo/Texas-holdem-poker/blob/develop/%E5%9B%BE%E7%89%87%E8%AF%B4%E6%98%8E/3%E5%90%AF%E5%8A%A8%E6%B8%B8%E6%88%8F.png?raw=true)
 ## 🎯 项目特色
 
 - **现代化架构**：基于Spring Boot + Netty构建，代码结构清晰
@@ -8,7 +9,6 @@
 - **面向对象设计**：模块化设计，易于扩展和维护
 - **完整规则实现**：严格遵循德州扑克标准规则
 
-![q](https://github.com/yuubo/Texas-holdem-poker/blob/develop/%E5%9B%BE%E7%89%87%E8%AF%B4%E6%98%8E/3%E5%90%AF%E5%8A%A8%E6%B8%B8%E6%88%8F.png?raw=true)
 
 ## 🏗️ 项目架构
 
