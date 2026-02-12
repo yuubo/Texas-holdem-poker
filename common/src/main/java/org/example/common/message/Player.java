@@ -1,4 +1,4 @@
-package org.example.common.bo;
+package org.example.common.message;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
@@ -14,6 +14,8 @@ public class Player extends BaseBo {
     private User user;
 
     private List<Poker> pokers;
+
+    private List<Poker> winPokers;
 
     private GameRound gameRound;
 
@@ -191,5 +193,13 @@ public class Player extends BaseBo {
 
     public void setExcessiveScore(BigDecimal excessiveScore) {
         this.excessiveScore = excessiveScore;
+    }
+
+    public List<Poker> getWinPokers() {
+        return winPokers;
+    }
+
+    public void setWinPokers(List<Poker> winPokers) {
+        this.winPokers = winPokers;
     }
 }

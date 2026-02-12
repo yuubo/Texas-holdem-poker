@@ -15,8 +15,9 @@ public class QueryService implements Runnable {
 
     private Channel ch;
 
-    private QueryService(Channel ch) {
-        searchUdpMessage.setSocketAddress(new InetSocketAddress("255.255.255.255", 8080));
+
+    private QueryService(Channel ch, String udpHost, int udpPort) {
+        searchUdpMessage.setSocketAddress(new InetSocketAddress(udpHost, udpPort));
         searchUdpMessage.setMessage("hello");
         this.ch = ch;
     }
@@ -41,9 +42,16 @@ public class QueryService implements Runnable {
         ch.writeAndFlush(searchUdpMessage);
     }
 
-    public static synchronized QueryService queryServiceFactory(Channel ch) {
+    public static synchronized QueryService queryServiceFactory(Channel ch, String udpHost, int udpPort) {
         if (queryService == null) {
-            queryService = new QueryService(ch);
+            queryService = new QueryService(ch, udpHost, udpPort);
+        }
+        return queryService;
+    }
+
+    public static QueryService queryService() {
+        if (queryService == null) {
+            throw new RuntimeException("请先调用queryServiceFactory方法");
         }
         return queryService;
     }

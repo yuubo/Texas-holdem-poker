@@ -2,14 +2,17 @@ package org.example.common.handle;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.example.common.bo.JsonObjectInfo;
+import org.example.common.message.JsonObjectInfo;
 import org.example.common.utils.JSONUtils;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
+@Component
+@Scope("prototype")
 public class JsonToBOInboundHandle extends SimpleChannelInboundHandler<String> {
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
-        System.err.println("接收入站消息：" +  msg);
         if (msg instanceof String) {
             JsonObjectInfo jsonObjectInfo = JSONUtils.parseObject(msg, JsonObjectInfo.class);
             Class<?> clazz = Class.forName(jsonObjectInfo.getClassInfo());

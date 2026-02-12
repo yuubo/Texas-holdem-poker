@@ -2,9 +2,15 @@ package org.example.common.enume;
 
 public enum GameRoundStatusEnum {
 
-    UNDERWAY(0), //进行中
+    /**
+     * 游戏进行中
+     */
+    ACTIVITY(1), //进行中
 
-    FINISH(1); //结束
+    /**
+     * 游戏未开始或本轮结束
+     */
+    FINISH(0); //结束
 
     private int status;
 

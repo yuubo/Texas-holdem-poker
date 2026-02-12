@@ -1,7 +1,11 @@
-package org.example.common.bo;
+package org.example.common.message;
 
 public class Poker extends BaseBo {
 
+    /**
+     * 花色
+     * {@link org.example.common.enume.PokerSuitsEnum}
+     */
     private int suits;
 
     private int no;

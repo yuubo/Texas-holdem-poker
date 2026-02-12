@@ -1,14 +1,13 @@
 package org.example.common.utils;
 
-import org.example.common.bo.Message;
-import org.example.common.bo.User;
-import org.example.common.channel.PokerChannel;
+import org.example.common.message.Message;
+import org.example.common.message.User;
 import org.example.common.init.MessageSourceUtils;
 
 public class SystemMessageUtils {
 
-    public static Message stringMessage(String msg, PokerChannel pokerChannel) {
-        return stringMessage(pokerChannel == null ? null : pokerChannel.getUser(), msg);
+    public static Message stringMessage(String msg) {
+        return stringMessage(null, msg);
     }
 
     public static Message stringMessage(User user, String msg) {
@@ -18,12 +17,16 @@ public class SystemMessageUtils {
         return message;
     }
 
-    public static Message messageSource(String code, PokerChannel pokerChannel) {
-        String msg = MessageSourceUtils.getMessage(code);
-        return stringMessage(pokerChannel == null ? null : pokerChannel.getUser(), msg);
+    public static Message messageSource(User user, String code, Object[] args) {
+        String msg = MessageSourceUtils.getMessage(code, args);
+        return stringMessage(user, msg);
     }
 
     public static Message messageSource(String code) {
-        return messageSource(code, null);
+        return messageSource(null, code, null);
+    }
+
+    public static Message messageSource(String code, Object[] arg) {
+        return messageSource(null, code, arg);
     }
 }

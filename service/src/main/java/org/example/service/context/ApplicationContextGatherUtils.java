@@ -11,7 +11,7 @@ public class ApplicationContextGatherUtils {
 
     static ApplicationContext applicationContext;
 
-    static PokerContext pokerContext;
+    public static PokerContext pokerContext;
 
     public static NettyApplicationContext nettyApplicationContext() {
         return nettyApplicationContext;

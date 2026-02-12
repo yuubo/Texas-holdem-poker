@@ -1,10 +1,14 @@
 netty:
   client:
     udp:
-      port: 8081
-      host: 255.255.255.255
+      # 如果和服务器在同一网段，可以启用udp自动搜索并连接服务器，和服务器不在同一网段需要配置service的ip和端口
+      enabled: true
+      # 服务器udp服务的端口
+      port: 8080
   eventLoop:
       threadCount: 1
       type: NIO
   service:
-    port: 8080
+    # 启用udp时可以不用配置服务器ip端口，如果和服务器不在同一个网段，请配置服务器ip和端口，并将udp.enabled配置为false
+    host: 127.0.0.1
+    port: 8081

@@ -1,4 +1,4 @@
-package org.example.common.bo;
+package org.example.common.message;
 
 public class JsonObjectInfo {
 

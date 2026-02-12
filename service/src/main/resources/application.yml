@@ -3,6 +3,7 @@ netty:
     tcp:
       port: 8081
     udp:
+      enabled: true
       port: 8080
   boosGroup:
     loopCount: 2

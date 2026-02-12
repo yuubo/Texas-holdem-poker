@@ -6,6 +6,8 @@ public class UdpMessage {
 
     private String message;
 
+    private int tcpPort;
+
     private SocketAddress SocketAddress;
 
     public String getMessage() {
@@ -22,6 +24,14 @@ public class UdpMessage {
 
     public void setSocketAddress(SocketAddress socketAddress) {
         SocketAddress = socketAddress;
+    }
+
+    public int getTcpPort() {
+        return tcpPort;
+    }
+
+    public void setTcpPort(int tcpPort) {
+        this.tcpPort = tcpPort;
     }
 
 }

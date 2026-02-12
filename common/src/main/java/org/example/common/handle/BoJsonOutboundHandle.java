@@ -5,24 +5,32 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
-import org.example.common.bo.BaseBo;
-import org.example.common.bo.GameRound;
-import org.example.common.bo.JsonObjectInfo;
-import org.example.common.bo.Player;
+import org.example.common.message.BaseBo;
+import org.example.common.message.GameRound;
+import org.example.common.message.JsonObjectInfo;
+import org.example.common.message.Player;
 import org.example.common.constant.CommonConstant;
 import org.example.common.enume.GameRoundStatusEnum;
 import org.example.common.utils.JSONUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import java.util.Iterator;
 
+@Component
+@Scope("prototype")
 public class BoJsonOutboundHandle extends ChannelOutboundHandlerAdapter {
+
+    @Autowired
+    private MessageJsonProcessor messageJsonProcessor;
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         //System.err.println("接收出站消息：" +  msg);
         if (msg instanceof BaseBo) {
             try {
-                String msgJson = getMsgJson(msg);
+                String msgJson = messageJsonProcessor.process((BaseBo) msg);
                 JsonObjectInfo jsonObjectInfo = new JsonObjectInfo();
                 jsonObjectInfo.setClassInfo(msg.getClass().getName());
                 jsonObjectInfo.setJsonStr(msgJson);
@@ -40,35 +48,6 @@ public class BoJsonOutboundHandle extends ChannelOutboundHandlerAdapter {
         }
     }
 
-    private String getMsgJson(Object msg) {
-        String msgJson = null;
-        if (msg instanceof Player) {
-            msgJson = simplifyPlayerJson((Player) msg);
-        } else {
-            msgJson = JSONUtils.toJSONString(msg);
-        }
-        return msgJson;
-    }
 
-    private String simplifyPlayerJson(Player player) {
-        GameRound gameRound = player.getGameRound();
-        JsonNode jsonNode = JSONUtils.toJsonNode(player);
-        JsonNode playerList = jsonNode.get("gameRound").get("playerList");
-
-        //判断是否是明牌
-        boolean isNotOpenCards = gameRound.getStatus() == GameRoundStatusEnum.UNDERWAY.getStatus() || gameRound.getPlayerList().size() - gameRound.getFoldPlayerTCount() == 1;
-
-        for (Iterator<JsonNode> it = playerList.elements(); it.hasNext();) {
-            Object object = it.next();
-            if (object instanceof ObjectNode) {
-                ObjectNode playerNode = (ObjectNode) object;
-                playerNode.remove("gameRound");
-                if (isNotOpenCards) {
-                    playerNode.remove("pokers");
-                }
-            }
-        }
-        return jsonNode.toString();
-    }
 
 }

@@ -9,6 +9,7 @@ public enum PlayerStatusEnum {
     ALL_IN(5), //全压
     PASS(6), //过牌
     CALL(7), //跟注
+    ONLOOKER(8), //观众
     ;
     private int status;
 

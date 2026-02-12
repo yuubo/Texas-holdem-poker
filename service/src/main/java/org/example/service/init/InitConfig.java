@@ -32,22 +32,25 @@ public class InitConfig {
     }
 
     @Bean
-    public ServerBootstrap serverBootstrap(@Qualifier("boosGroup") EventLoopGroup boosGroup, @Qualifier("workerGroup") EventLoopGroup workerGroup) {
+    public ServerBootstrap serverBootstrap(@Qualifier("boosGroup") EventLoopGroup boosGroup,
+                                           @Qualifier("workerGroup") EventLoopGroup workerGroup,
+                                           InitPipeline initPipeline) {
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap.group(boosGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
-                .childHandler(new InitPipeline());
+                .childHandler(initPipeline);
         return serverBootstrap;
     }
 
     @Bean
-    public Bootstrap bootstrap(@Qualifier("boosGroup") EventLoopGroup boosGroup) {
+    public Bootstrap bootstrap(@Qualifier("boosGroup") EventLoopGroup boosGroup,
+                               InitUDPPipeline initUDPPipeline) {
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(boosGroup)
                 .channel(NioDatagramChannel.class)
                 .option(ChannelOption.SO_BROADCAST, true)
-                .handler(new InitUDPPipeline());
+                .handler(initUDPPipeline);
         return bootstrap;
     }
 
