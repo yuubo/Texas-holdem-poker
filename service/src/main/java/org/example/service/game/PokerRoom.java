@@ -170,6 +170,13 @@ public class PokerRoom {
         boolean isNext = OperateDispose.operate(player, channel, gameIndex, operate);
 
         if (isNext) {
+            if (gameIndex.getPartyPlayerCount() - 1 == gameRound.getFoldPlayerTCount()) {
+                //弃牌只剩一个玩家时结束本局
+                gameRound.setOnlyOne(true);
+                finish();
+                return;
+            }
+
             PokerChannel pc = getPokerChannelByPlayerIndex(gameIndex.getPlayIndex() + 1);
             Player pl = playerMap.get(pc.getUser());
             if (pl == gameIndex.getLastPlayer().player() && gameRound.getScore() == pl.getScore()) {
@@ -187,6 +194,7 @@ public class PokerRoom {
             gameIndex.playIndexAdd();
             next();
         } else {
+            nowOperate = null;
             channel.getChannel().writeAndFlush(SystemMessageUtils.messageSource("service.gameround.hint.f"));
         }
     }
@@ -197,11 +205,6 @@ public class PokerRoom {
 
     private void next() {
         nowOperate = null;
-        if (gameIndex.getPartyPlayerCount() - 1 == gameRound.getFoldPlayerTCount()) {
-            //弃牌只剩一个玩家时结束本局
-            finish();
-            return;
-        }
         PokerChannel pokerChannel = getPokerChannelByPlayerIndex(gameIndex.getPlayIndex());
         User user = pokerChannel.getUser();
         System.out.println(user.getName() + "操作" + gameIndex.getPlayIndex());
@@ -227,12 +230,14 @@ public class PokerRoom {
             if (pl.getScore() == gameRound.getScore()) {
                 operate.getAllowOperates().add(OperateEnum.PASS.getOperate());
             }
-            if (pl.getScoreTotal() < gameRound.getScore()) {
-                operate.getAllowOperates().add(OperateEnum.ALLIN.getOperate());
-            }
             if (pl.getScoreTotal() >= (gameRound.getScore() - pl.getScore())) {
-                operate.getAllowOperates().add(OperateEnum.CALL.getOperate());
+                if (pl.getScore() < gameRound.getScore()) {
+                    operate.getAllowOperates().add(OperateEnum.CALL.getOperate());
+                }
                 operate.getAllowOperates().add(OperateEnum.FILL.getOperate());
+            }
+            if (pl.getScoreTotal() > gameRound.getScore()) {
+                operate.getAllowOperates().add(OperateEnum.ALLIN.getOperate());
             }
 
             operate.getAllowOperates().add(OperateEnum.FOLD.getOperate());
@@ -293,17 +298,24 @@ public class PokerRoom {
      */
     private List<Map.Entry<Integer, List<Player>>> grade() {
         Map<Integer, List<Player>> lastPlayerMap = new HashMap<>();
+        List<Poker> pokers = new ArrayList<>(7);
+        pokers.addAll(gameRound.getCommonPokerList());
         for (Player player : playerMap.values()) {
-            if (player.getStatus() == PlayerStatusEnum.FOLD.getStatus()
-                    || player.getStatus() == PlayerStatusEnum.ONLOOKER.getStatus()) {
+            if (player.getStatus() == PlayerStatusEnum.ONLOOKER.getStatus()) {
                 continue;
             }
 
-            List<Poker> pokers = new ArrayList<>();
-            pokers.addAll(player.getPokers());
-            pokers.addAll(gameRound.getCommonPokerList());
-            //player.setGrade(PokerUtils.grade(pokers, player));
-            PokerUtils.grade(pokers, player);
+            if (player.getStatus() == PlayerStatusEnum.FOLD.getStatus()) {
+                player.setGrade(0);
+            } else {
+                if (gameRound.isOnlyOne()) {
+                    player.setGrade(10000);
+                } else {
+                    pokers.add(5, player.getPokers().get(0));
+                    pokers.add(6, player.getPokers().get(1));
+                    PokerUtils.grade(pokers, player);
+                }
+            }
             player.setCalculateScore(BigDecimal.valueOf(player.getScore()));
             player.setCalculateTotalScore(BigDecimal.valueOf(player.getScoreTotal()));
             player.setCalculatePartyWinScore(BigDecimal.valueOf(0));
@@ -393,8 +405,11 @@ public class PokerRoom {
      */
     private void transitionScoreType() {
         playerMap.values().forEach((pl) -> {
-            pl.setScoreTotal(pl.getCalculateTotalScore().intValue() + pl.getExcessiveScore().intValue());
+            pl.setScoreTotal(pl.getCalculateTotalScore().intValue());
             pl.setPartyWinScore(pl.getCalculatePartyWinScore().intValue());
+            if (pl.getPartyWinScore() == 0 && pl.getCalculateScore().compareTo(BigDecimal.ONE) >= 0) {
+                pl.setScoreTotal(pl.getScoreTotal() + pl.getCalculateScore().intValue());
+            }
         });
     }
 
@@ -436,7 +451,12 @@ public class PokerRoom {
                 proportionMap.put(loserPlayScore.toPlainString(), map);
             }
 
-            BigDecimal proportion = player.getCalculateScore().divide(total, SCALE, ROUNDING_MODE);
+            BigDecimal proportion;
+            if (player.getCalculateScore().compareTo(loserPlayScore) > 0) {
+                proportion = loserPlayScore.divide(total, SCALE, ROUNDING_MODE);
+            } else {
+                proportion = player.getCalculateScore().divide(total, SCALE, ROUNDING_MODE);
+            }
 
             map.put(player, proportion);
         }

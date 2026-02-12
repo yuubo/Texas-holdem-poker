@@ -31,8 +31,8 @@ public class ThMessageJsonProcessor implements MessageJsonProcessor {
         JsonNode jsonNode = JSONUtils.toJsonNode(player);
         JsonNode playerList = jsonNode.get("gameRound").get("playerList");
 
-        //判断是否是明牌
-        boolean isNotOpenCards = gameRound.getStatus() == GameRoundStatusEnum.ACTIVITY.getStatus() || gameRound.getPlayerList().size() - gameRound.getFoldPlayerTCount() == 1;
+        //判断是否是明牌 游戏未结束或者只有一个人未弃牌不显示其他人的牌
+        boolean isNotOpenCards = gameRound.getStatus() == GameRoundStatusEnum.ACTIVITY.getStatus() || gameRound.isOnlyOne();
 
         for (Iterator<JsonNode> it = playerList.elements(); it.hasNext();) {
             Object object = it.next();

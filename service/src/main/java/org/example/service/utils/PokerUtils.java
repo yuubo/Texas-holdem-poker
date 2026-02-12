@@ -301,45 +301,4 @@ public class PokerUtils {
         boolean isStraightSuits = false;
     }
 
-    public static void main(String[] args) {
-        List<Poker> pokerList = new ArrayList<>();
-        Poker poker = new Poker();
-        poker.setNo(9);
-        poker.setSuits(1);
-        pokerList.add(poker);
-
-        poker = new Poker();
-        poker.setNo(4);
-        poker.setSuits(1);
-        pokerList.add(poker);
-
-        poker = new Poker();
-        poker.setNo(3);
-        poker.setSuits(1);
-        pokerList.add(poker);
-
-        poker = new Poker();
-        poker.setNo(5);
-        poker.setSuits(1);
-        pokerList.add(poker);
-
-        poker = new Poker();
-        poker.setNo(11);
-        poker.setSuits(1);
-        pokerList.add(poker);
-
-        poker = new Poker();
-        poker.setNo(6);
-        poker.setSuits(2);
-        pokerList.add(poker);
-
-        poker = new Poker();
-        poker.setNo(12);
-        poker.setSuits(3);
-        pokerList.add(poker);
-
-        Player player = new Player();
-        PokerUtils.grade(pokerList, player);
-        System.out.println(player.getGrade() + "--" + PokerTypeEnum.getPokerTypeEnum(player.getPokerType()));
-    }
 }
