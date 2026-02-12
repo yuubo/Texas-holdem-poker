@@ -47,6 +47,11 @@ public class GameRound extends BaseBo {
      */
     private int foldPlayerTCount;
 
+    /**
+     * 当前局是否只有一人未弃牌
+     */
+    private transient boolean isOnlyOne = false;
+
     public void setId(int id) {
         this.id = id;
     }
@@ -125,5 +130,13 @@ public class GameRound extends BaseBo {
 
     public void setCalculateScore(BigDecimal calculateScore) {
         this.calculateScore = calculateScore;
+    }
+
+    public boolean isOnlyOne() {
+        return isOnlyOne;
+    }
+
+    public void setOnlyOne(boolean isOnlyOne) {
+        this.isOnlyOne = isOnlyOne;
     }
 }

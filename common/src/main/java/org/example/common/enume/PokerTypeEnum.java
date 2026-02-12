@@ -10,7 +10,8 @@ public enum PokerTypeEnum {
     F(6, "同花"),
     G(7, "葫芦"),
     H(8, "四条"),
-    I(9, "同花顺")
+    I(9, "同花顺"),
+    z(0, ""),
     ;
 
     private int type;

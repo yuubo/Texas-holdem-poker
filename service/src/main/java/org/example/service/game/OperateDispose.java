@@ -82,7 +82,9 @@ public class OperateDispose {
     private static boolean fill(Player player, PokerChannel channel, GameIndex gameIndex, Operate operate) {
         if (operate.getOperate() == OperateEnum.FILL.getOperate()) {
             //加注
-            if (player.getScoreTotal() == 0 && player.getScoreTotal() > (player.getGameRound().getScore() - player.getScore())) {
+            if (player.getScore() < player.getGameRound().getScore()) {
+                operate.setScore(operate.getScore() + player.getGameRound().getScore() - player.getScore());
+            } else if (player.getScoreTotal() == 0 && player.getScoreTotal() > (player.getGameRound().getScore() - player.getScore())) {
                 channel.getChannel().writeAndFlush(SystemMessageUtils.messageSource("service.gameround.hint.d"));
                 return false;
             } else if (player.getScoreTotal() < operate.getScore()){
