@@ -75,6 +75,8 @@ public class Player extends BaseBo {
      */
     private int pokerType;
 
+    private Operate operate;
+
     public int getId() {
         return id;
     }
@@ -201,5 +203,13 @@ public class Player extends BaseBo {
 
     public void setWinPokers(List<Poker> winPokers) {
         this.winPokers = winPokers;
+    }
+
+    public Operate getOperate() {
+        return operate;
+    }
+
+    public void setOperate(Operate operate) {
+        this.operate = operate;
     }
 }

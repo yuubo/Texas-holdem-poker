@@ -59,7 +59,7 @@ public class PokerRoom {
             informPlayer(p -> {
                 Message s = SystemMessageUtils.messageSource("service.gameround.hint.g", new Object[]{name, roomId});
                 return s;
-            });
+            }, null);
         } finally {
             lock.unlock();
         }
@@ -153,6 +153,10 @@ public class PokerRoom {
         return player;
     }
 
+    private PokerChannel getPokerChannelByPlayerIndex(int index) {
+        return pokerChannelList.get(index % gameIndex.getPartyPlayerCount());
+    }
+
     public void operateHandle(Operate operate, PokerChannel channel) {
         if (operate.getOperate() == OperateEnum.START.getOperate()) {
             start();
@@ -166,10 +170,13 @@ public class PokerRoom {
 
         nowOperate = channel;
         Player player = playerMap.get(channel.getUser());
+        player.setOperate(null);
         player.setActivity(PlayerActivityEnum.NORMAL.getNumber());
-        boolean isNext = OperateDispose.operate(player, channel, gameIndex, operate);
 
-        if (isNext) {
+        //处理操作
+        OperateDispose.Result result = OperateDispose.operate(player, channel, gameIndex, operate);
+
+        if (result.isNext()) {
             if (gameIndex.getPartyPlayerCount() - 1 == gameRound.getFoldPlayerTCount()) {
                 //弃牌只剩一个玩家时结束本局
                 gameRound.setOnlyOne(true);
@@ -195,12 +202,8 @@ public class PokerRoom {
             next();
         } else {
             nowOperate = null;
-            channel.getChannel().writeAndFlush(SystemMessageUtils.messageSource("service.gameround.hint.f"));
+            channel.getChannel().writeAndFlush(SystemMessageUtils.messageSource(result.errorCode()));
         }
-    }
-
-    private PokerChannel getPokerChannelByPlayerIndex(int index) {
-        return pokerChannelList.get(index % gameIndex.getPartyPlayerCount());
     }
 
     private void next() {
@@ -244,14 +247,10 @@ public class PokerRoom {
 
             pl.setActivity(PlayerActivityEnum.ACTIVITY.getNumber());
             pl.setStatus(PlayerStatusEnum.NORMAL.getStatus());
+            pl.setOperate(operate);
 
             refreshPlayer();
 
-            pokerChannel.getChannel().eventLoop().execute(() -> {
-                pokerChannel.getChannel().writeAndFlush(operate);
-            });
-
-            //pokerChannel.getChannel().eventLoop().parent().next().
         }
     }
 
@@ -268,10 +267,12 @@ public class PokerRoom {
                     || player.getStatus() == PlayerStatusEnum.SMALL_BLIND.getStatus()) {
                 player.setStatus(PlayerStatusEnum.NORMAL.getStatus());
             }
-            if (pokerChannel.getStatus() != PokerChannelStatusEnum.DISCONNECT.getStatus()) {
+            /*if (pokerChannel.getStatus() != PokerChannelStatusEnum.DISCONNECT.getStatus()) {
                 pokerChannel.getChannel().writeAndFlush(player);
-            }
+            }*/
         });
+
+        //refreshPlayer();
 
         next();
     }
@@ -466,14 +467,19 @@ public class PokerRoom {
     public void refreshPlayer() {
         informPlayer((p) -> {
             return playerMap.get(p.getUser());
+        }, (p) -> {
+            if (p.getStatus() == PokerChannelStatusEnum.DISCONNECT.getStatus()) {
+                return false;
+            }
+            return true;
         });
     }
 
-    public void informPlayer(Function<PokerChannel, BaseBo> function) {
+    public void informPlayer(Function<PokerChannel, BaseBo> getMesssageFun, Function<PokerChannel, Boolean> filter) {
         eventLoop.execute(() -> {
             pokerChannelList.forEach(pokerChannel -> {
-                if (pokerChannel.getStatus() != PokerChannelStatusEnum.DISCONNECT.getStatus()) {
-                    BaseBo bo = function.apply(pokerChannel);
+                if (filter == null || filter.apply(pokerChannel)) {
+                    BaseBo bo = getMesssageFun.apply(pokerChannel);
                     pokerChannel.getChannel().writeAndFlush(bo);
                 }
             });
@@ -493,7 +499,7 @@ public class PokerRoom {
         pokerChannel.setStatus(PokerChannelStatusEnum.DISCONNECT.getStatus());
         Player player = playerMap.get(pokerChannel.getUser());
 
-        if (nowOperate == pokerChannel) {
+        if (nowOperate == pokerChannel && gameRound.getStatus() == GameRoundStatusEnum.ACTIVITY.getStatus()) {
             nowOperate = null;
             Operate operate = new Operate();
             operate.setOperate(OperateEnum.FOLD.getOperate());
