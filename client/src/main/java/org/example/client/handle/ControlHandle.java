@@ -38,9 +38,11 @@ public class ControlHandle extends SimpleChannelInboundHandler<BaseBo> {
         } else if (msg instanceof Message) {
             messageHandle((Message) msg);
         } else if (msg instanceof Player) {
-            ExportConsole.print((Player) msg);
-        } else if(msg instanceof Operate) {
-            ExportConsole.print((Operate) msg);
+            Player p = (Player) msg;
+            ExportConsole.print(p);
+            if (p.getOperate() != null) {
+                ExportConsole.print(p.getOperate());
+            }
         }
     }
 
